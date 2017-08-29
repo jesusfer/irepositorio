@@ -16,9 +16,9 @@ public class RepositorioThread extends Thread {
 	private String cfgPadre;
 	private String cfgRaiz;
 
-	IndiceBusqueda indice;
+	private IndiceBusqueda indice;
 
-	IRepositorioServerImpl sirviente;
+	private IRepositorioServerImpl sirviente;
 
 	private IRepositorio repositorio;
 	private IRepositorio repositorioRaiz;
@@ -39,7 +39,7 @@ public class RepositorioThread extends Thread {
 		// Inicializar middleware
 		// /////////////////////////////////
 
-		System.out.println("Inicializando Middleware");
+		// System.out.println("Inicializando Middleware");
 		Properties props = new Properties();
 		JavaORB mdlw = new JavaORB();
 		// mdlw.opcionesLC = args;
@@ -83,7 +83,8 @@ public class RepositorioThread extends Thread {
 			if (repositorioRaiz == null) {
 				MainRepositorio.errorFatal("No se ha podido localizar el repositorio raiz!");
 			}
-			System.out.println("Raiz encontrada: " + repositorioRaiz.nombre());
+			// System.out.println("Raiz encontrada: " +
+			// repositorioRaiz.nombre());
 
 			// Y también a mi padre
 			if (cfgRaiz.equals(cfgPadre)) {
@@ -94,7 +95,8 @@ public class RepositorioThread extends Thread {
 					MainRepositorio.errorFatal("No se ha podido localizar el repositorio padre!");
 				}
 			}
-			System.out.println("Padre encontrado: " + repositorioPadre.nombre());
+			// System.out.println("Padre encontrado: " +
+			// repositorioPadre.nombre());
 			repositorio.padre(repositorioPadre);
 			// Registrarme como hijo ya que no soy el raiz
 			repositorio.padre().registrar(repositorio);
@@ -103,7 +105,7 @@ public class RepositorioThread extends Thread {
 		// Hemos terminado la inicialización
 		System.out.println("Repositorio activo...");
 		Middleware.esperar();
-		System.out.println("RepoThread terminando...");
+		System.out.println("Repositorio terminando...");
 	}
 
 	public void detener() {
@@ -117,7 +119,7 @@ public class RepositorioThread extends Thread {
 		// Middleware.desregistrar(sirviente);
 	}
 
-	IRepositorio localizarRepositorio(String nombre) {
+	private IRepositorio localizarRepositorio(String nombre) {
 		IRepositorio repo;
 		// En realidad, el nombre es el nombre del contexto y dentro del
 		// contexto
@@ -134,5 +136,9 @@ public class RepositorioThread extends Thread {
 
 	public IRepositorio getRepositorioRaiz() {
 		return repositorioRaiz;
+	}
+
+	public IndiceBusqueda getIndiceBusqueda() {
+		return indice;
 	}
 }

@@ -37,16 +37,17 @@ public class MainRepositorio {
 			errorFatal("Config dir doesn't exist! (" + directorioConfiguracion.getAbsolutePath() + ")");
 		}
 
-		System.out.println("Config dir: " + directorioConfiguracion.getAbsolutePath());
+		// System.out.println("Config dir: " +
+		// directorioConfiguracion.getAbsolutePath());
 
 		// Leer archivos de configuracion sencillos
 		String cfgPadre = leeCadenaConfiguracion("RepositorioPadre.cfg", directorioConfiguracion);
 		String cfgRaiz = leeCadenaConfiguracion("RepositorioRaiz.cfg", directorioConfiguracion);
 		String cfgNombre = leeCadenaConfiguracion("NombreRepositorio.cfg", directorioConfiguracion);
 
-		System.out.println("Repo raiz: " + cfgRaiz);
+		// System.out.println("Repo raiz: " + cfgRaiz);
 		System.out.println("Repo nombre: " + cfgNombre);
-		System.out.println("Repo padre: " + cfgPadre);
+		// System.out.println("Repo padre: " + cfgPadre);
 
 		IndiceBusqueda indice = cargarIndice("ListaArchivos.cfg", directorioConfiguracion);
 
@@ -98,7 +99,8 @@ public class MainRepositorio {
 			e.printStackTrace();
 			errorFatal(e.getMessage());
 		}
-		Consola.Mensaje("Cargados " + indice.size() + " documentos en el indice");
+		// Consola.Mensaje("Cargados " + indice.size() +
+		// " documentos en el indice");
 		return indice;
 	}
 
@@ -107,6 +109,10 @@ public class MainRepositorio {
 			System.out.println();
 			System.out.println("1. Buscar documentos en este repositorio (y subordinados)");
 			System.out.println("2. Buscar documentos globalmente");
+			System.out.println("3. Descargar documento");
+			System.out.println("4. Listar documentos en el repositorio local");
+			System.out.println("5. Insertar documento en el repositorio local");
+			System.out.println("6. Eliminar documento en el repositorio local");
 			System.out.println("9. Exit");
 			System.out.print("> ");
 
@@ -120,6 +126,9 @@ public class MainRepositorio {
 				case 2:
 					hacerBusquedaGlobal();
 					break;
+				case 4:
+					listarRepositorioLocal();
+					break;
 				case 9:
 					repoThread.detener();
 					Middleware.detener();
@@ -132,12 +141,20 @@ public class MainRepositorio {
 		}
 	}
 
+	private static void listarRepositorioLocal() {
+		imprimirCoincidencias(repoThread.getIndiceBusqueda().buscar());
+	}
+
 	private static void hacerBusquedaGlobal() {
 		Scanner in = new Scanner(System.in);
 		System.out.print("Palabra? ");
 		String palabra = in.nextLine();
-		Coincidencia[] cx = repoThread.getRepositorioRaiz().buscar(palabra);
-		imprimirCoincidencias(cx);
+		try {
+			Coincidencia[] cx = repoThread.getRepositorioRaiz().buscar(palabra);
+			imprimirCoincidencias(cx);
+		} catch (Exception ex) {
+			System.err.format("Error buscando globalmente");
+		}
 	}
 
 	private static void hacerBusqueda() {

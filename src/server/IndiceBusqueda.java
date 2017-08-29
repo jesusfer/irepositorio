@@ -21,7 +21,7 @@ public class IndiceBusqueda {
 
 	protected void nuevoDocumento(ArchivoDetalles detalles) {
 		indice.put(detalles.nombre, detalles);
-		Consola.Mensaje("Indice::nuevoDocumento: " + detalles.nombre);
+//		Consola.Mensaje("Indice::nuevoDocumento: " + detalles.nombre);
 	}
 
 	public int size() {
