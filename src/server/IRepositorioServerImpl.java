@@ -1,5 +1,6 @@
 package server;
 
+import middleware.Middleware;
 import repositorio.Coincidencia;
 import repositorio.IRepositorio;
 
@@ -10,7 +11,6 @@ import repositorio.IRepositorio;
  * methods'.
  */
 public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
-
 	String nombre;
 	IRepositorio padre = null;
 
@@ -29,7 +29,7 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	public IRepositorio padre() {
 		if (padre == null)
 			return (IRepositorio) this;
-		return null;
+		return padre;
 	}
 
 	public void padre(IRepositorio newPadre) {
@@ -46,9 +46,16 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 
 	}
 
+	/**
+	 * Da de baja un repositorio subordinado.
+	 * 
+	 * Solo quita la referencia del subordinado como hijo de este repositorio.
+	 * No quita referencias en ORB o quita el nombre raiz del repositorio.
+	 * */
 	public void baja(String nombre) {
-		// TODO Auto-generated method stub
-
+		String[] nombres = { nombre(), nombre };
+		Middleware.desnombrarObjeto(nombres);
+		Consola.Mensaje("Baja de subordinado: " + nombre);
 	}
 
 	public Coincidencia[] buscar(String palabraClave) {
@@ -66,9 +73,18 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 		return null;
 	}
 
+	/**
+	 * Metodo que usará un repositorio subordinado para registrarse como hijo.
+	 * 
+	 * TODO Se podría también mantener la lista de hijos según los que se
+	 * registren usando este método.
+	 * */
 	public String registrarConNombre(IRepositorio referencia, String nombre) {
-		// TODO Auto-generated method stub
-		return null;
+		String[] ruta = { nombre(), nombre };
+		Middleware.nombrarObjeto(referencia, ruta);
+		IRepositorio registrado = (IRepositorio) Middleware.localizar(ruta, IRepositorio.CLASE);
+		Consola.Mensaje("Nuevo subordinado: " + registrado.nombre());
+		return registrado.nombre();
 	}
 
 	public byte[] solicitarBloque(String nombre) {

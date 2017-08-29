@@ -30,6 +30,12 @@ module repositorio {
 
 	interface IRepositorio {
 		///////////////////////////////////
+		// Constantes
+		///////////////////////////////////
+		const string CLAVE = "myself.repo";
+		const string CLASE = "repositorio.IRepositorio";
+
+		///////////////////////////////////
 		// Atributos
 		///////////////////////////////////
 		attribute IRepositorio padre;

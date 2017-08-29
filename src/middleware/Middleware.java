@@ -40,12 +40,27 @@ public abstract class Middleware {
 		middleware.desregistrar(objeto);
 	}
 
-	public static void nombrar(Object objeto, String nombre) {
-		middleware.nombrar(objeto, nombre);
+	public static void nombrarObjeto(Object objeto, String nombre) {
+		middleware.nombrarObjeto(objeto, nombre);
+	}
+
+	public static void nombrarObjeto(Object objeto, String[] nombres) {
+		middleware.nombrarObjeto(objeto, nombres);
+	}
+
+	public static void desnombrarObjeto(String[] nombres){
+		middleware.desnombrarObjeto(nombres);
+	}
+
+	public static void nombrarContexto(String[] nombres) {
+		middleware.nombrarContexto(nombres);
 	}
 
 	public static Object localizar(String nombre_objeto, String nombre_clase) {
 		return middleware.localizar(nombre_objeto, nombre_clase);
 	}
 
+	public static Object localizar(String[] nombres, String nombre_clase) {
+		return middleware.localizar(nombres, nombre_clase);
+	}
 }

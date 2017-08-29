@@ -48,7 +48,7 @@ public class MainRepositorio {
 		repoThread.start();
 
 		// Esperar a que el hilo inicialice...
-		Thread.sleep(2000);
+		Thread.sleep(1000);
 
 		while (true) {
 			System.out.println("Escribe \"exit\" para salir");
@@ -58,6 +58,7 @@ public class MainRepositorio {
 			String entradaUsuario = br.readLine();
 
 			if (entradaUsuario != null && entradaUsuario.equals("exit")) {
+				repoThread.detener();
 				Middleware.detener();
 //				repoThread.interrupt();
 				System.exit(0);

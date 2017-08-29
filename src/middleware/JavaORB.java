@@ -9,6 +9,7 @@ import org.omg.PortableServer.Servant;
 import org.omg.CosNaming.NameComponent;
 import org.omg.CosNaming.NamingContext;
 import org.omg.CosNaming.NamingContextHelper;
+import org.omg.CosNaming.NamingContextPackage.AlreadyBound;
 import org.omg.CosNaming.NamingContextPackage.CannotProceed;
 import org.omg.CosNaming.NamingContextPackage.NotFound;
 import org.omg.CosNaming.NamingContextPackage.InvalidName;
@@ -159,7 +160,7 @@ public class JavaORB implements IMiddleware {
 		}
 	}
 
-	public void nombrar(java.lang.Object objeto, String nombre) {
+	public void nombrarObjeto(java.lang.Object objeto, String nombre) {
 		// Si no se ha obtenido aún la referencia al contexto raíz de la
 		// aplicación, obténgase ahora:
 		if (raizAplicacion == null) {
@@ -173,6 +174,88 @@ public class JavaORB implements IMiddleware {
 			NameComponent nuevo_nombre = new NameComponent(nombre, "");
 			NameComponent[] nn = { nuevo_nombre };
 			raizAplicacion.rebind(nn, (org.omg.CORBA.Object) objeto);
+		} catch (InvalidName e) {
+			e.printStackTrace();
+		} catch (NotFound e) {
+			e.printStackTrace();
+		} catch (CannotProceed e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void nombrarObjeto(java.lang.Object objeto, String[] nombres) {
+		// Si no se ha obtenido aún la referencia al contexto raíz de la
+		// aplicación, obténgase ahora:
+		if (raizAplicacion == null) {
+			inicializar_servicio_nombres();
+		}
+
+		// En cualquier caso raizAplicación ya apunta al contexto de la
+		// aplicación. Creamos en este
+		// el nombre que se pasa como argumento:
+		try {
+			ArrayList<NameComponent> cx = new ArrayList<NameComponent>();
+			for (String nombre : nombres) {
+				cx.add(new NameComponent(nombre, ""));
+			}
+			NameComponent[] nn = new NameComponent[cx.size()];
+			cx.toArray(nn);
+			raizAplicacion.rebind(nn, (org.omg.CORBA.Object) objeto);
+		} catch (InvalidName e) {
+			e.printStackTrace();
+		} catch (NotFound e) {
+			e.printStackTrace();
+		} catch (CannotProceed e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void desnombrarObjeto(String[] nombres) {
+		// Si no se ha obtenido aún la referencia al contexto raíz de la
+		// aplicación, obténgase ahora:
+		if (raizAplicacion == null) {
+			inicializar_servicio_nombres();
+		}
+
+		// En cualquier caso raizAplicación ya apunta al contexto de la
+		// aplicación. Creamos en este
+		// el nombre que se pasa como argumento:
+		try {
+			ArrayList<NameComponent> cx = new ArrayList<NameComponent>();
+			for (String nombre : nombres) {
+				cx.add(new NameComponent(nombre, ""));
+			}
+			NameComponent[] nn = new NameComponent[cx.size()];
+			cx.toArray(nn);
+			raizAplicacion.unbind(nn);
+		} catch (InvalidName e) {
+			e.printStackTrace();
+		} catch (NotFound e) {
+			e.printStackTrace();
+		} catch (CannotProceed e) {
+			e.printStackTrace();
+		}
+	}
+	public void nombrarContexto(String[] nombres) {
+		// Si no se ha obtenido aún la referencia al contexto raíz de la
+		// aplicación, obténgase ahora:
+		if (raizAplicacion == null) {
+			inicializar_servicio_nombres();
+		}
+
+		// En cualquier caso raizAplicación ya apunta al contexto de la
+		// aplicación. Creamos en este
+		// el nombre que se pasa como argumento:
+		try {
+			ArrayList<NameComponent> cx = new ArrayList<NameComponent>();
+			for (String nombre : nombres) {
+				cx.add(new NameComponent(nombre, ""));
+			}
+
+			NameComponent[] nn = new NameComponent[cx.size()];
+			cx.toArray(nn);
+			NamingContext nuevo_ctx = raizAplicacion.new_context();
+			raizAplicacion.rebind_context(nn, nuevo_ctx);
 		} catch (InvalidName e) {
 			e.printStackTrace();
 		} catch (NotFound e) {
@@ -212,4 +295,37 @@ public class JavaORB implements IMiddleware {
 		return resultado;
 	}
 
+	public Object localizar(String[] nombres, String nombre_clase) {
+		org.omg.CORBA.Object resultado = null;
+
+		if (raizAplicacion == null) // Si no se ha inicializado el servicio de
+			// nombres...
+			inicializar_servicio_nombres();
+
+		try {
+			ArrayList<NameComponent> cx = new ArrayList<NameComponent>();
+			for (String nombre : nombres) {
+				cx.add(new NameComponent(nombre, ""));
+			}
+
+			NameComponent[] nn = new NameComponent[cx.size()];
+			cx.toArray(nn);
+			org.omg.CORBA.Object obj = raizAplicacion.resolve(nn);
+			if (obj != null)
+				resultado = narrow(obj, nombre_clase);
+
+		} catch (InvalidName e) {
+			e.printStackTrace();
+		} catch (CannotProceed e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (NotFound e) {
+			e.printStackTrace();
+		}
+
+		return resultado;
+	}
 }

@@ -64,7 +64,17 @@ public interface IMiddleware {
 	 * @param nombre
 	 *            Nombre (cadena de texto) que se le asocia
 	 */
-	public void nombrar(Object objeto, String nombre);
+	public void nombrarObjeto(Object objeto, String nombre);
+
+	public void nombrarObjeto(Object objeto, String[] nombres);
+
+	public void desnombrarObjeto(String[] nombres);
+	
+	/**
+	 * Asocia un nombre a un nuevo contexto. El contexto tendrá el nombre del
+	 * último componente de la lista de nombres.
+	 * */
+	public void nombrarContexto(String[] nombres);
 
 	/**
 	 * Localiza un objeto a partir de su nombre asociado. En caso de no existir
@@ -79,4 +89,9 @@ public interface IMiddleware {
 	 *         ningún objeto asociado a dicho nombre, se obtiene null.
 	 */
 	public Object localizar(String nombre_objeto, String nombre_clase);
+
+	/**
+	 * Localiza un objeto usando la cadena de nombres
+	 * */
+	public Object localizar(String[] nombres, String nombre_clase);
 }
