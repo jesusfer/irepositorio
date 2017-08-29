@@ -20,8 +20,7 @@ import middleware.JavaORB;
 import middleware.Middleware;
 
 public class MainRepositorio {
-	static IRepositorioThread repoThread;
-	static IndiceBusqueda indice;
+	static RepositorioThread repoThread;
 
 	/**
 	 * @param args
@@ -49,9 +48,9 @@ public class MainRepositorio {
 		System.out.println("Repo nombre: " + cfgNombre);
 		System.out.println("Repo padre: " + cfgPadre);
 
-		indice = cargarIndice("ListaArchivos.cfg", directorioConfiguracion);
+		IndiceBusqueda indice = cargarIndice("ListaArchivos.cfg", directorioConfiguracion);
 
-		repoThread = new IRepositorioThread(cfgNombre, cfgPadre, cfgRaiz, indice);
+		repoThread = new RepositorioThread(cfgNombre, cfgPadre, cfgRaiz, indice);
 		repoThread.start();
 
 		// Esperar a que el hilo inicialice...
@@ -106,8 +105,8 @@ public class MainRepositorio {
 	public static void verMenuPrincipal() {
 		while (true) {
 			System.out.println();
-			System.out.println("1. Listar documentos");
-			System.out.println("2. Buscar documentos");
+			System.out.println("1. Buscar documentos en este repositorio (y subordinados)");
+			System.out.println("2. Buscar documentos globalmente");
 			System.out.println("9. Exit");
 			System.out.print("> ");
 
@@ -116,10 +115,10 @@ public class MainRepositorio {
 
 				switch (entrada.nextInt()) {
 				case 1:
-					imprimirCoincidencias(indice.buscar());
+					hacerBusqueda();
 					break;
 				case 2:
-					hacerBusqueda();
+					hacerBusquedaGlobal();
 					break;
 				case 9:
 					repoThread.detener();
@@ -133,11 +132,19 @@ public class MainRepositorio {
 		}
 	}
 
+	private static void hacerBusquedaGlobal() {
+		Scanner in = new Scanner(System.in);
+		System.out.print("Palabra? ");
+		String palabra = in.nextLine();
+		Coincidencia[] cx = repoThread.getRepositorioRaiz().buscar(palabra);
+		imprimirCoincidencias(cx);
+	}
+
 	private static void hacerBusqueda() {
 		Scanner in = new Scanner(System.in);
 		System.out.print("Palabra? ");
 		String palabra = in.nextLine();
-		Coincidencia[] cx = indice.getRepositorio().buscar(palabra);
+		Coincidencia[] cx = repoThread.getRepositorio().buscar(palabra);
 		imprimirCoincidencias(cx);
 	}
 

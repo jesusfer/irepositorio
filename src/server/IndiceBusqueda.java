@@ -15,10 +15,6 @@ public class IndiceBusqueda {
 		indice = new HashMap<String, ArchivoDetalles>();
 	}
 
-	public IRepositorio getRepositorio() {
-		return this.repositorio;
-	}
-
 	public void setRepositorio(IRepositorio repositorio) {
 		this.repositorio = repositorio;
 	}

@@ -11,20 +11,20 @@ import repositorio.IRepositorio;
  * Este hilo se encarga de crear el servidor para responder a llamadas remotas
  * para este Repositorio
  * */
-public class IRepositorioThread extends Thread {
+public class RepositorioThread extends Thread {
 	private String cfgNombre;
 	private String cfgPadre;
 	private String cfgRaiz;
 
 	IndiceBusqueda indice;
-	
+
 	IRepositorioServerImpl sirviente;
 
 	private IRepositorio repositorio;
 	private IRepositorio repositorioRaiz;
 	private IRepositorio repositorioPadre;
 
-	public IRepositorioThread(String cfgNombre, String cfgPadre, String cfgRaiz, IndiceBusqueda indice) {
+	public RepositorioThread(String cfgNombre, String cfgPadre, String cfgRaiz, IndiceBusqueda indice) {
 		super("RepoThread");
 		this.cfgNombre = cfgNombre;
 		this.cfgPadre = cfgPadre;
@@ -126,5 +126,13 @@ public class IRepositorioThread extends Thread {
 		repo = (IRepositorio) Middleware.localizar(ruta, IRepositorio.CLASE);
 
 		return repo;
+	}
+
+	public IRepositorio getRepositorio() {
+		return repositorio;
+	}
+
+	public IRepositorio getRepositorioRaiz() {
+		return repositorioRaiz;
 	}
 }
