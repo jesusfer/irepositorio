@@ -1,5 +1,6 @@
 package server;
 
+import java.net.ConnectException;
 import java.util.Properties;
 
 import middleware.JavaORB;
@@ -103,7 +104,11 @@ public class IRepositorioThread extends Thread {
 
 	public void detener() {
 		if (!cfgNombre.equals(cfgPadre)) {
-			repositorioPadre.baja(cfgNombre);
+			try {
+				repositorioPadre.baja(cfgNombre);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		// Middleware.desregistrar(sirviente);
 	}

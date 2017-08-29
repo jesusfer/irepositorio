@@ -43,6 +43,7 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	 * */
 	public IRepositorio[] subordinados() {
 		Object[] hijos = Middleware.localizarHijos(nombre(), IRepositorio.CLASE);
+		// Hay que quitar uno, que es este mismo repositorio
 		IRepositorio[] hijosRep = new IRepositorio[hijos.length - 1];
 		for (int i = 0, j = 0; i < hijos.length; i++) {
 			IRepositorio r = (IRepositorio) hijos[i];
