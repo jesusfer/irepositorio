@@ -94,4 +94,6 @@ public interface IMiddleware {
 	 * Localiza un objeto usando la cadena de nombres
 	 * */
 	public Object localizar(String[] nombres, String nombre_clase);
+	
+	public Object[] localizarHijos(String nombre_objeto, String nombre_clase_hijos);
 }

@@ -7,6 +7,7 @@ module repositorio {
 	
 	// Lista de nombres de los repositorios subordinados
 	typedef sequence<string> StringSeq;
+	typedef sequence<IRepositorio> IRepositorioSeq;
 	
 	struct ArchivoDetalles {
 		string nombre;
@@ -39,7 +40,7 @@ module repositorio {
 		// Atributos
 		///////////////////////////////////
 		attribute IRepositorio padre;
-		attribute StringSeq subordinados;
+		readonly attribute IRepositorioSeq subordinados;
 		attribute string nombre;
 		
 		///////////////////////////////////

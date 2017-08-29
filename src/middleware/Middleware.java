@@ -63,4 +63,8 @@ public abstract class Middleware {
 	public static Object localizar(String[] nombres, String nombre_clase) {
 		return middleware.localizar(nombres, nombre_clase);
 	}
+
+	public static Object[] localizarHijos(String nombre_objeto, String nombre_clase_hijos) {
+		return middleware.localizarHijos(nombre_objeto, nombre_clase_hijos);
+	}
 }

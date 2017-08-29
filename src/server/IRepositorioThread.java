@@ -92,7 +92,7 @@ public class IRepositorioThread extends Thread {
 			System.out.println("Padre encontrado: " + repositorioPadre.nombre());
 			repositorio.padre(repositorioPadre);
 			// Registrarme como hijo ya que no soy el raiz
-			repositorio.padre().registrarConNombre(repositorio, cfgNombre);
+			repositorio.padre().registrar(repositorio);
 		}
 
 		// Hemos terminado la inicialización

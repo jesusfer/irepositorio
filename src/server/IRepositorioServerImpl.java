@@ -11,7 +11,7 @@ import repositorio.IRepositorio;
  * methods'.
  */
 public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
-	String nombre;
+	String nombre = null;
 	IRepositorio padre = null;
 
 	public IRepositorioServerImpl() {
@@ -36,14 +36,22 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 		padre = newPadre;
 	}
 
-	public String[] subordinados() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public void subordinados(String[] newSubordinados) {
-		// TODO Auto-generated method stub
-
+	/**
+	 * Obtiene la lista de repositorios que están subordinados de este.
+	 * 
+	 * La lista se obtiene del Name Server.
+	 * */
+	public IRepositorio[] subordinados() {
+		Object[] hijos = Middleware.localizarHijos(nombre(), IRepositorio.CLASE);
+		IRepositorio[] hijosRep = new IRepositorio[hijos.length - 1];
+		for (int i = 0, j = 0; i < hijos.length; i++) {
+			IRepositorio r = (IRepositorio) hijos[i];
+			if (!r.nombre().equals(this.nombre())) {
+				hijosRep[j] = r;
+				j++;
+			}
+		}
+		return hijosRep;
 	}
 
 	/**
@@ -56,6 +64,7 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 		String[] nombres = { nombre(), nombre };
 		Middleware.desnombrarObjeto(nombres);
 		Consola.Mensaje("Baja de subordinado: " + nombre);
+		Consola.Mensaje("Subordinados cuenta: " + subordinados().length);
 	}
 
 	public Coincidencia[] buscar(String palabraClave) {
@@ -68,9 +77,14 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 
 	}
 
+	/**
+	 * Metodo que usará un repositorio subordinado para registrarse como hijo.
+	 * 
+	 * TODO Se podría también mantener la lista de hijos según los que se
+	 * registren usando este método.
+	 * */
 	public String registrar(IRepositorio referencia) {
-		// TODO Auto-generated method stub
-		return null;
+		return registrarConNombre(referencia, referencia.nombre());
 	}
 
 	/**
@@ -84,6 +98,7 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 		Middleware.nombrarObjeto(referencia, ruta);
 		IRepositorio registrado = (IRepositorio) Middleware.localizar(ruta, IRepositorio.CLASE);
 		Consola.Mensaje("Nuevo subordinado: " + registrado.nombre());
+		Consola.Mensaje("Subordinados cuenta: " + subordinados().length);
 		return registrado.nombre();
 	}
 

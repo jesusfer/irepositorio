@@ -6,6 +6,11 @@ import org.omg.PortableServer.POAPackage.ObjectNotActive;
 import org.omg.PortableServer.POAPackage.ServantNotActive;
 import org.omg.PortableServer.POAPackage.WrongPolicy;
 import org.omg.PortableServer.Servant;
+import org.omg.CosNaming.Binding;
+import org.omg.CosNaming.BindingHolder;
+import org.omg.CosNaming.BindingIteratorHolder;
+import org.omg.CosNaming.BindingListHolder;
+import org.omg.CosNaming.BindingType;
 import org.omg.CosNaming.NameComponent;
 import org.omg.CosNaming.NamingContext;
 import org.omg.CosNaming.NamingContextHelper;
@@ -236,6 +241,7 @@ public class JavaORB implements IMiddleware {
 			e.printStackTrace();
 		}
 	}
+
 	public void nombrarContexto(String[] nombres) {
 		// Si no se ha obtenido aún la referencia al contexto raíz de la
 		// aplicación, obténgase ahora:
@@ -313,6 +319,61 @@ public class JavaORB implements IMiddleware {
 			org.omg.CORBA.Object obj = raizAplicacion.resolve(nn);
 			if (obj != null)
 				resultado = narrow(obj, nombre_clase);
+
+		} catch (InvalidName e) {
+			e.printStackTrace();
+		} catch (CannotProceed e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (NotFound e) {
+			e.printStackTrace();
+		}
+
+		return resultado;
+	}
+
+	/**
+	 * Devuelve una lista de los objetos de una clase que están en el contexto
+	 * nombre_objeto.
+	 * 
+	 * nombre_objeto será el nombre del contexto de donde sacar los hijos. Para
+	 * cada hijo, si es un objeto, se hará el casting a nombre_clase_hijos.
+	 * */
+	public Object[] localizarHijos(String nombre_objeto, String nombre_clase_hijos) {
+		org.omg.CORBA.Object[] resultado = null;
+
+		ArrayList<org.omg.CORBA.Object> _lista = new ArrayList<org.omg.CORBA.Object>();
+		
+		if (raizAplicacion == null) // Si no se ha inicializado el servicio de
+			// nombres...
+			inicializar_servicio_nombres();
+
+		try {
+			NameComponent nombre = new NameComponent(nombre_objeto, "");
+			NameComponent[] nn = { nombre };
+			org.omg.CORBA.Object obj = raizAplicacion.resolve(nn);
+			NamingContext ctx = NamingContextHelper.narrow(obj);
+
+			BindingListHolder bl = new BindingListHolder();
+			BindingIteratorHolder bit = new BindingIteratorHolder();
+
+			ctx.list(0, bl, bit);
+			BindingHolder bh = new BindingHolder();
+			while (bit.value.next_one(bh)) {
+				Binding b = bh.value;
+				if (b.binding_type.equals(BindingType.nobject)) {
+					org.omg.CORBA.Object hijoCorba = ctx.resolve(b.binding_name);
+					_lista.add(narrow(hijoCorba, nombre_clase_hijos));
+				}
+			}
+
+			resultado = new org.omg.CORBA.Object[_lista.size()];
+			_lista.toArray(resultado);
+			
+			// resultado = narrow(obj, nombre_clase);
 
 		} catch (InvalidName e) {
 			e.printStackTrace();
