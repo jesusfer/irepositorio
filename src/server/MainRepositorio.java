@@ -149,10 +149,28 @@ public class MainRepositorio {
 	}
 
 	private static void imprimirCoincidencias(Coincidencia[] coincidencias) {
-		System.out.println("Archivos encontrados (" + coincidencias.length + ")");
-		for (Coincidencia c : coincidencias) {
-			System.out.println(c.repositorio.nombre() + " -> " + c.nombre);
+		String format = "%-20s%-20s%-16s%-25s%-25s%n";
+		System.out.format("%nArchivos encontrados (%d)%n%n", coincidencias.length);
+		if (coincidencias.length > 0) {
+			System.out.format(format, "Repositorio", "Nombre", "Archivo", "Palabras clave", "Comentario");
+			System.out.format(format, "-----------", "------", "-------", "--------------", "----------");
+			for (Coincidencia c : coincidencias) {
+				System.out.format(format, c.repositorio.nombre(), c.nombre, c.archivo, join(",",
+						c.palabrasClave), c.comentario);
+			}
 		}
+	}
+
+	private static String join(String caracter, String[] cadenas) {
+		StringBuilder sb = new StringBuilder();
+		if (cadenas.length > 0) {
+			sb.append(cadenas[0]);
+			for (int i = 1; i < cadenas.length; i++) {
+				sb.append(caracter);
+				sb.append(cadenas[i]);
+			}
+		}
+		return sb.toString();
 	}
 
 	/**
