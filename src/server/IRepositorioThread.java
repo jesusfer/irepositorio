@@ -16,17 +16,20 @@ public class IRepositorioThread extends Thread {
 	private String cfgPadre;
 	private String cfgRaiz;
 
+	IndiceBusqueda indice;
+	
 	IRepositorioServerImpl sirviente;
 
 	private IRepositorio repositorio;
 	private IRepositorio repositorioRaiz;
 	private IRepositorio repositorioPadre;
 
-	public IRepositorioThread(String cfgNombre, String cfgPadre, String cfgRaiz) {
+	public IRepositorioThread(String cfgNombre, String cfgPadre, String cfgRaiz, IndiceBusqueda indice) {
 		super("RepoThread");
 		this.cfgNombre = cfgNombre;
 		this.cfgPadre = cfgPadre;
 		this.cfgRaiz = cfgRaiz;
+		this.indice = indice;
 		// start();
 	}
 
@@ -46,9 +49,10 @@ public class IRepositorioThread extends Thread {
 
 		// Creación del sirviente y registrarlo
 		System.out.println("Creando y registrando el repositorio");
-		sirviente = new IRepositorioServerImpl();
+		sirviente = new IRepositorioServerImpl(indice);
 		repositorio = (IRepositorio) Middleware.registrar(sirviente, IRepositorio.CLASE);
 
+		indice.setRepositorio(repositorio);
 		// Configurar el sirviente
 		repositorio.nombre(cfgNombre);
 

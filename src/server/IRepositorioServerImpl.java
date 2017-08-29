@@ -1,5 +1,7 @@
 package server;
 
+import java.util.ArrayList;
+
 import middleware.Middleware;
 import repositorio.Coincidencia;
 import repositorio.IRepositorio;
@@ -13,9 +15,11 @@ import repositorio.IRepositorio;
 public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	String nombre = null;
 	IRepositorio padre = null;
+	IndiceBusqueda indice;
 
-	public IRepositorioServerImpl() {
+	public IRepositorioServerImpl(IndiceBusqueda indice) {
 		super();
+		this.indice = indice;
 	}
 
 	public String nombre() {
@@ -64,13 +68,52 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	public void baja(String nombre) {
 		String[] nombres = { nombre(), nombre };
 		Middleware.desnombrarObjeto(nombres);
-		Consola.Mensaje("Baja de subordinado: " + nombre);
-		Consola.Mensaje("Subordinados cuenta: " + subordinados().length);
+//		Consola.Mensaje("Baja de subordinado: " + nombre);
+//		Consola.Mensaje("Subordinados cuenta: " + subordinados().length);
 	}
 
+	/**
+	 * Buscar implica buscar en este repositorio y recursivamente en los
+	 * repositorios subordinados.
+	 */
 	public Coincidencia[] buscar(String palabraClave) {
-		// TODO Auto-generated method stub
-		return null;
+		// 1. Hacemos una lista con los repositorios en los que hay que buscar
+		// (incluyendo el local)
+		// 2. Por cada repositorio hacemos un Thread y buscamos
+		// 3. Join
+		// 4. Unir resultados
+		ArrayList<Coincidencia> resultados = new ArrayList<Coincidencia>();
+
+		// for (Coincidencia c : this.indice.buscar(palabraClave)) {
+		// resultados.add(c);
+		// }
+
+		ArrayList<IRepositorio> repos = new ArrayList<IRepositorio>();
+		// Si añado el local, provocamos recursividad infinita
+		// repos.add(indice.getRepositorio());
+		for (IRepositorio sub : subordinados()) {
+			repos.add(sub);
+		}
+
+		ArrayList<Thread> threads = new ArrayList<Thread>();
+		threads.add(new BusquedaLocalThread(indice, palabraClave));
+		for (IRepositorio repo : repos) {
+			threads.add(new BusquedaThread(repo, palabraClave));
+		}
+		for (Thread t : threads) {
+			try {
+				t.join();
+				for (Coincidencia c : ((IBusquedaThread) t).getResultados()) {
+					resultados.add(c);
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		// Aqui todos los hilos han terminado y tenemos todos los resultados
+		// unidos
+
+		return resultados.toArray(new Coincidencia[0]);
 	}
 
 	public void iniciarDescarga(String nombre) {
@@ -98,8 +141,8 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 		String[] ruta = { nombre(), nombre };
 		Middleware.nombrarObjeto(referencia, ruta);
 		IRepositorio registrado = (IRepositorio) Middleware.localizar(ruta, IRepositorio.CLASE);
-		Consola.Mensaje("Nuevo subordinado: " + registrado.nombre());
-		Consola.Mensaje("Subordinados cuenta: " + subordinados().length);
+//		Consola.Mensaje("Nuevo subordinado: " + registrado.nombre());
+//		Consola.Mensaje("Subordinados cuenta: " + subordinados().length);
 		return registrado.nombre();
 	}
 
