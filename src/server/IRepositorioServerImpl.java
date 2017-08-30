@@ -3,8 +3,11 @@ package server;
 import java.util.ArrayList;
 
 import middleware.Middleware;
+import repositorio.ArchivoDetalles;
+import repositorio.ArchivoNoEncontradoException;
 import repositorio.Coincidencia;
 import repositorio.IRepositorio;
+import repositorio.ITransferencia;
 
 /**
  * This class is the implementation object for your IDL interface.
@@ -68,8 +71,8 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	public void baja(String nombre) {
 		String[] nombres = { nombre(), nombre };
 		Middleware.desnombrarObjeto(nombres);
-//		Consola.Mensaje("Baja de subordinado: " + nombre);
-//		Consola.Mensaje("Subordinados cuenta: " + subordinados().length);
+		// Consola.Mensaje("Baja de subordinado: " + nombre);
+		// Consola.Mensaje("Subordinados cuenta: " + subordinados().length);
 	}
 
 	/**
@@ -116,9 +119,17 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 		return resultados.toArray(new Coincidencia[0]);
 	}
 
-	public void iniciarDescarga(String nombre) {
-		// TODO Auto-generated method stub
-
+	/**
+	 * Este método debe comportarse como una factoría de ITransferencias.
+	 * @throws ArchivoNoEncontradoException 
+	 * */
+	public ITransferencia iniciarDescarga(String nombre) throws ArchivoNoEncontradoException {
+		// Se solicita la descarga de un archivo
+		// Se busca el archivo en el índice y se pasan los detalles a la nueva
+		// transferencia
+		ArchivoDetalles detalles = indice.detallesArchivo(nombre);
+		TransferenciaThread hilo = new TransferenciaThread(detalles);
+		return hilo.getTransferencia();
 	}
 
 	/**
@@ -141,8 +152,8 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 		String[] ruta = { nombre(), nombre };
 		Middleware.nombrarObjeto(referencia, ruta);
 		IRepositorio registrado = (IRepositorio) Middleware.localizar(ruta, IRepositorio.CLASE);
-//		Consola.Mensaje("Nuevo subordinado: " + registrado.nombre());
-//		Consola.Mensaje("Subordinados cuenta: " + subordinados().length);
+		// Consola.Mensaje("Nuevo subordinado: " + registrado.nombre());
+		// Consola.Mensaje("Subordinados cuenta: " + subordinados().length);
 		return registrado.nombre();
 	}
 

@@ -4,6 +4,7 @@
 module repositorio {
 	// Forward reference para poder usar IRepositorio antes de declararla
 	interface IRepositorio;
+	interface ITransferencia;
 	
 	// Lista de nombres de los repositorios subordinados
 	typedef sequence<string> StringSeq;
@@ -29,6 +30,10 @@ module repositorio {
 	typedef sequence<Coincidencia> Resultados;
 	typedef sequence<octet> Bytes;
 
+	exception ArchivoNoEncontradoException{
+		string message;
+	};
+
 	interface IRepositorio {
 		///////////////////////////////////
 		// Constantes
@@ -47,20 +52,12 @@ module repositorio {
 		// Operaciones
 		///////////////////////////////////
 		
-		// TODO Búsqueda por palabras clave
+		// Búsqueda por palabras clave
 		Resultados buscar(in string palabraClave);
 		
 		// TODO Recuperar documentos
-		void iniciarDescarga(in string nombre);
-		Bytes solicitarBloque(in string nombre);
+		ITransferencia iniciarDescarga(in string nombre) raises (ArchivoNoEncontradoException);
 
-		// Solo LOCAL
-		// Buscar en todos los repositorios
-		// void buscarTodo(in string palabraClave);
-				
-		// Solo LOCAL
-		// Añadir informacion en el índice
-		// void registrar(in string ruta);
 		
 		// Registrar repositorios subordinados
 		string registrar(in IRepositorio referencia);
@@ -68,7 +65,13 @@ module repositorio {
 
 		// Dar de baja un repositorio
 		void baja(in string nombre);
-		
-		
+	};
+	
+	///////////////////////////////////
+	// Transferencias de archivos
+	///////////////////////////////////
+	
+	interface ITransferencia {
+		Bytes solicitarBloque() raises (ArchivoNoEncontradoException);
 	};
 };

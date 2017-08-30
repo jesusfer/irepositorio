@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import repositorio.ArchivoDetalles;
+import repositorio.ArchivoNoEncontradoException;
 import repositorio.Coincidencia;
 import repositorio.IRepositorio;
 
@@ -21,7 +22,7 @@ public class IndiceBusqueda {
 
 	protected void nuevoDocumento(ArchivoDetalles detalles) {
 		indice.put(detalles.nombre, detalles);
-//		Consola.Mensaje("Indice::nuevoDocumento: " + detalles.nombre);
+		// Consola.Mensaje("Indice::nuevoDocumento: " + detalles.nombre);
 	}
 
 	public int size() {
@@ -58,5 +59,12 @@ public class IndiceBusqueda {
 		}
 
 		return results.toArray(new Coincidencia[0]);
+	}
+
+	public ArchivoDetalles detallesArchivo(String nombre) throws ArchivoNoEncontradoException {
+		if (!indice.containsKey(nombre)) {
+			throw new ArchivoNoEncontradoException("Archivo no encontrado");
+		}
+		return indice.get(nombre);
 	}
 }

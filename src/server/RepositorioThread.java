@@ -30,11 +30,12 @@ public class RepositorioThread extends Thread {
 		this.cfgPadre = cfgPadre;
 		this.cfgRaiz = cfgRaiz;
 		this.indice = indice;
-		// start();
+//		start();
 	}
 
 	@Override
 	public void run() {
+		MainRepositorio.loadLock.lock();
 		// /////////////////////////////////
 		// Inicializar middleware
 		// /////////////////////////////////
@@ -99,10 +100,15 @@ public class RepositorioThread extends Thread {
 			// repositorioPadre.nombre());
 			repositorio.padre(repositorioPadre);
 			// Registrarme como hijo ya que no soy el raiz
-			repositorio.padre().registrar(repositorio);
+			try {
+				repositorio.padre().registrar(repositorio);
+			} catch (Exception ex) {
+				MainRepositorio.errorFatal("Error en el registro como hijo");
+			}
 		}
 
 		// Hemos terminado la inicialización
+		MainRepositorio.loadLock.unlock();
 		System.out.println("Repositorio activo...");
 		Middleware.esperar();
 		System.out.println("Repositorio terminando...");

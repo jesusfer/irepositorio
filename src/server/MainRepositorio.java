@@ -3,6 +3,7 @@ package server;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -11,16 +12,23 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import repositorio.ArchivoDetalles;
+import repositorio.ArchivoNoEncontradoException;
 import repositorio.Coincidencia;
 import repositorio.IRepositorio;
+import repositorio.ITransferencia;
 
 import middleware.JavaORB;
 import middleware.Middleware;
 
 public class MainRepositorio {
-	static RepositorioThread repoThread;
+	private static RepositorioThread repoThread;
+	protected static Lock loadLock = new ReentrantLock();
+
+	private static Coincidencia[] ultimaBusqueda;
 
 	/**
 	 * @param args
@@ -55,7 +63,11 @@ public class MainRepositorio {
 		repoThread.start();
 
 		// Esperar a que el hilo inicialice...
-		Thread.sleep(1000);
+		// Ñapa para esperar hasta que el hilo servidor haya terminado de cargar
+		Thread.sleep(1);
+		MainRepositorio.loadLock.lock();
+		MainRepositorio.loadLock.unlock();
+
 		verMenuPrincipal();
 	}
 
@@ -63,7 +75,7 @@ public class MainRepositorio {
 		String contents = null;
 		File archivo = null;
 		try {
-			archivo = new File(directorio, nombre);
+			archivo = new File(directorio.getAbsolutePath(), nombre);
 			if (!archivo.exists()) {
 				errorFatal(nombre + " no encontrado!");
 			}
@@ -104,9 +116,10 @@ public class MainRepositorio {
 		return indice;
 	}
 
-	public static void verMenuPrincipal() {
+	private static void verMenuPrincipal() {
 		while (true) {
 			System.out.println();
+			System.out.format("%nMenú del repositorio%n%n");
 			System.out.println("1. Buscar documentos en este repositorio (y subordinados)");
 			System.out.println("2. Buscar documentos globalmente");
 			System.out.println("3. Descargar documento");
@@ -126,6 +139,9 @@ public class MainRepositorio {
 				case 2:
 					hacerBusquedaGlobal();
 					break;
+				case 3:
+					descargarDocumento();
+					break;
 				case 4:
 					listarRepositorioLocal();
 					break;
@@ -141,6 +157,63 @@ public class MainRepositorio {
 		}
 	}
 
+	private static void descargarDocumento() {
+		if (ultimaBusqueda == null || ultimaBusqueda.length == 0) {
+			System.out.println("No se ha hecho una búsqueda o la última búsqueda no tuvo resultados.");
+			return;
+		}
+		// Que el usuario elija un resultado de búsqueda...
+		System.out.println("Ultima búsqueda realizada:");
+		imprimirCoincidencias(ultimaBusqueda);
+
+		Scanner in = new Scanner(System.in);
+		System.out.println();
+		System.out.print("# de resultado? ");
+		int indice = in.nextInt() - 1;
+		if (indice > ultimaBusqueda.length) {
+			System.out.println("No es un resultado válido...");
+		}
+		Coincidencia resultado = ultimaBusqueda[indice];
+		System.out.format("Iniciando descarga de '%s' desde '%s'%n", resultado.nombre, resultado.repositorio
+				.nombre());
+
+		// Pues nada, iniciar la descarga en el directorio actual
+
+		FileOutputStream fos = null;
+		int totalRecibidos = 0;
+		try {
+			// Iniciar la descarga
+			ITransferencia transferencia = resultado.repositorio.iniciarDescarga(resultado.nombre);
+			// Crear el archivo local e ir rellenándolo
+			File dir = new File("");
+			File salida = new File(dir.getAbsolutePath(), resultado.archivo);
+			System.out.println("Descargando en: " + salida.getAbsolutePath());
+			fos = new FileOutputStream(salida);
+			byte[] leidos = transferencia.solicitarBloque();
+			while (leidos.length > 0) {
+				fos.write(leidos);
+				totalRecibidos += leidos.length;
+				leidos = transferencia.solicitarBloque();
+				System.out.format("%-10s %12d\r", "Recibidos:", totalRecibidos);
+				System.out.flush();
+			}
+		} catch (ArchivoNoEncontradoException e) {
+			System.out.println("Error: " + e.message);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				fos.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	private static void listarRepositorioLocal() {
 		imprimirCoincidencias(repoThread.getIndiceBusqueda().buscar());
 	}
@@ -151,10 +224,12 @@ public class MainRepositorio {
 		String palabra = in.nextLine();
 		try {
 			Coincidencia[] cx = repoThread.getRepositorioRaiz().buscar(palabra);
+			ultimaBusqueda = cx;
 			imprimirCoincidencias(cx);
 		} catch (Exception ex) {
 			System.err.format("Error buscando globalmente");
 		}
+		volverAlMenu();
 	}
 
 	private static void hacerBusqueda() {
@@ -162,17 +237,29 @@ public class MainRepositorio {
 		System.out.print("Palabra? ");
 		String palabra = in.nextLine();
 		Coincidencia[] cx = repoThread.getRepositorio().buscar(palabra);
+		ultimaBusqueda = cx;
 		imprimirCoincidencias(cx);
+		volverAlMenu();
+	}
+
+	private static void volverAlMenu() {
+		System.out.println();
+		System.out.println("Pulsa Enter para volver al menú...");
+		Scanner in = new Scanner(System.in);
+		in.nextLine();
 	}
 
 	private static void imprimirCoincidencias(Coincidencia[] coincidencias) {
-		String format = "%-20s%-20s%-16s%-25s%-25s%n";
+		String format = "%-3s%-20s%-20s%-16s%-25s%-25s%n";
 		System.out.format("%nArchivos encontrados (%d)%n%n", coincidencias.length);
 		if (coincidencias.length > 0) {
-			System.out.format(format, "Repositorio", "Nombre", "Archivo", "Palabras clave", "Comentario");
-			System.out.format(format, "-----------", "------", "-------", "--------------", "----------");
-			for (Coincidencia c : coincidencias) {
-				System.out.format(format, c.repositorio.nombre(), c.nombre, c.archivo, join(",",
+			System.out
+					.format(format, "#", "Repositorio", "Nombre", "Archivo", "Palabras clave", "Comentario");
+			System.out
+					.format(format, "-", "-----------", "------", "-------", "--------------", "----------");
+			for (int i = 0; i < coincidencias.length; i++) {
+				Coincidencia c = coincidencias[i];
+				System.out.format(format, i + 1, c.repositorio.nombre(), c.nombre, c.archivo, join(",",
 						c.palabrasClave), c.comentario);
 			}
 		}

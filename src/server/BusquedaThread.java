@@ -16,7 +16,7 @@ public class BusquedaThread extends Thread implements IBusquedaThread {
 
 	@Override
 	public void run() {
-		Consola.Mensaje("Buscando en " + repositorio.nombre());
+//		Consola.Mensaje("Buscando en " + repositorio.nombre());
 		resultados = this.repositorio.buscar(palabra);
 	}
 
