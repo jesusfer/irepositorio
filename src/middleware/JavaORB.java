@@ -19,8 +19,14 @@ import org.omg.CosNaming.NamingContextPackage.CannotProceed;
 import org.omg.CosNaming.NamingContextPackage.NotFound;
 import org.omg.CosNaming.NamingContextPackage.InvalidName;
 
+import com.sun.corba.se.impl.logging.ORBUtilSystemException;
+import com.sun.corba.se.spi.logging.CORBALogDomains;
+
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 public class JavaORB implements IMiddleware {
 	public String opcionesLC[]; // Opciones a pasar al ORB recibidas por la
@@ -120,6 +126,11 @@ public class JavaORB implements IMiddleware {
 		_nombreSN = nombreSN;
 		_kindSN = kindSN;
 
+		// Para evitar que ORB escriba constantemente mensajes de error en la consola
+		LogManager lm = LogManager.getLogManager();
+		Logger l = lm.getLogger("javax.enterprise.resource.corba._DEFAULT_.rpc.transport");
+		l.setLevel(Level.SEVERE);
+		
 		// Inicializar POA
 		try {
 			poa = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
@@ -295,7 +306,7 @@ public class JavaORB implements IMiddleware {
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 		} catch (NotFound e) {
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 
 		return resultado;
@@ -329,7 +340,7 @@ public class JavaORB implements IMiddleware {
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 		} catch (NotFound e) {
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 
 		return resultado;

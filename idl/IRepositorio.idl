@@ -30,8 +30,11 @@ module repositorio {
 	typedef sequence<Coincidencia> Resultados;
 	typedef sequence<octet> Bytes;
 
-	exception ArchivoNoEncontradoException{
+	exception ArchivoNoEncontradoException {
 		string message;
+	};
+
+	exception RegistroNoPosibleException {
 	};
 
 	interface IRepositorio {
@@ -60,8 +63,8 @@ module repositorio {
 
 		
 		// Registrar repositorios subordinados
-		string registrar(in IRepositorio referencia);
-		string registrarConNombre(in IRepositorio referencia, in string nombre);
+		string registrar(in IRepositorio referencia) raises (RegistroNoPosibleException);
+		string registrarConNombre(in IRepositorio referencia, in string nombre) raises (RegistroNoPosibleException);
 
 		// Dar de baja un repositorio
 		void baja(in string nombre);

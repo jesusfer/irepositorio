@@ -140,7 +140,8 @@ public class IndiceBusqueda {
 	public static ArchivoDetalles StringToDetalles(String linea) {
 		ArchivoDetalles detalles = null;
 		String[] parts = linea.split(",");
-		if (parts.length != 5) {
+		// Pueden ser 4 si no hay comentario, o 5 si lo hay
+		if (parts.length != 4 && parts.length != 5) {
 			Main.errorFatal("Linea de indice incorrecta");
 		}
 		try {
@@ -148,7 +149,12 @@ public class IndiceBusqueda {
 			String _archivo = URLDecoder.decode(parts[1], "UTF-8");
 			String _directorio = URLDecoder.decode(parts[2], "UTF-8");
 			String[] _palabrasClave = URLDecoder.decode(parts[3], "UTF-8").split("::");
-			String _comentario = URLDecoder.decode(parts[4], "UTF-8");
+			String _comentario;
+			try {
+				_comentario = URLDecoder.decode(parts[4], "UTF-8");
+			} catch (Exception ex) {
+				_comentario = "";
+			}
 			detalles = new ArchivoDetalles(_nombre, _archivo, _directorio, _palabrasClave, _comentario);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();

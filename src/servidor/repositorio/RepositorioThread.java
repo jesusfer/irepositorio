@@ -2,6 +2,9 @@ package servidor.repositorio;
 
 import java.util.Properties;
 
+import com.sun.corba.se.impl.logging.ORBUtilSystemException;
+import com.sun.corba.se.spi.logging.CORBALogDomains;
+
 import middleware.JavaORB;
 import middleware.Middleware;
 import repositorio.IRepositorio;
@@ -31,7 +34,7 @@ public class RepositorioThread extends Thread {
 		this.cfgPadre = cfgPadre;
 		this.cfgRaiz = cfgRaiz;
 		this.indice = indice;
-//		start();
+		// start();
 	}
 
 	@Override
@@ -64,9 +67,22 @@ public class RepositorioThread extends Thread {
 		// Y dentro del contexto un objeto que apunta al IRepositorio
 		// Así puedo colgar referencias también a mis hijos del contexto
 		String[] nombresContexto = { cfgNombre };
-		Middleware.nombrarContexto(nombresContexto);
-
 		String[] nombresRepositorio = { cfgNombre, IRepositorio.CLAVE };
+		IRepositorio x = (IRepositorio) Middleware.localizar(nombresRepositorio, IRepositorio.CLASE);
+		if (x != null) {
+			boolean continuar = false;
+			try {
+				x.nombre();
+			} catch (Exception ex) {
+				continuar = true;
+			}
+			if (!continuar) {
+				Main.errorFatal("Ya hay un repositorio registrado con nombre: " + cfgNombre);
+
+			}
+		}
+
+		Middleware.nombrarContexto(nombresContexto);
 		Middleware.nombrarObjeto(repositorio, nombresRepositorio);
 
 		// Ahora busco el raiz y mi padre para tener sus referencias
@@ -120,7 +136,8 @@ public class RepositorioThread extends Thread {
 			try {
 				repositorioPadre.baja(cfgNombre);
 			} catch (Exception e) {
-				e.printStackTrace();
+//				e.printStackTrace();
+				System.err.println("Error dando de baja. Quizá el padre se ha muerto?");
 			}
 		}
 		// Middleware.desregistrar(sirviente);

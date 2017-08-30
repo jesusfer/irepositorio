@@ -8,11 +8,14 @@ import repositorio.ArchivoNoEncontradoException;
 import repositorio.Coincidencia;
 import repositorio.IRepositorio;
 import repositorio.ITransferencia;
+import repositorio.RegistroNoPosibleException;
 import servidor.busqueda.BusquedaLocalThread;
 import servidor.busqueda.BusquedaThread;
 import servidor.busqueda.IBusquedaThread;
 import servidor.busqueda.IndiceBusqueda;
 import servidor.transferencias.TransferenciaThread;
+import utils.Arrays;
+import utils.Condicion;
 
 /**
  * This class is the implementation object for your IDL interface.
@@ -75,7 +78,11 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	 * */
 	public void baja(String nombre) {
 		String[] nombres = { nombre(), nombre };
-		Middleware.desnombrarObjeto(nombres);
+		try {
+			Middleware.desnombrarObjeto(nombres);
+		} catch (Exception ex) {
+			System.err.println("Error dando de baja: " + nombre);
+		}
 		// Consola.Mensaje("Baja de subordinado: " + nombre);
 		// Consola.Mensaje("Subordinados cuenta: " + subordinados().length);
 	}
@@ -126,7 +133,8 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 
 	/**
 	 * Este método debe comportarse como una factoría de ITransferencias.
-	 * @throws ArchivoNoEncontradoException 
+	 * 
+	 * @throws ArchivoNoEncontradoException
 	 * */
 	public ITransferencia iniciarDescarga(String nombre) throws ArchivoNoEncontradoException {
 		// Se solicita la descarga de un archivo
@@ -142,8 +150,10 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	 * 
 	 * TODO Se podría también mantener la lista de hijos según los que se
 	 * registren usando este método.
+	 * 
+	 * @throws RegistroNoPosibleException
 	 * */
-	public String registrar(IRepositorio referencia) {
+	public String registrar(IRepositorio referencia) throws RegistroNoPosibleException {
 		return registrarConNombre(referencia, referencia.nombre());
 	}
 
@@ -152,8 +162,18 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	 * 
 	 * TODO Se podría también mantener la lista de hijos según los que se
 	 * registren usando este método.
+	 * 
+	 * @throws RegistroNoPosibleException
 	 * */
-	public String registrarConNombre(IRepositorio referencia, String nombre) {
+	public String registrarConNombre(IRepositorio referencia, String nombre)
+			throws RegistroNoPosibleException {
+		// Comprobar que no hay un repositorio hijo con este mismo nombre.
+		IRepositorio[] r = subordinados();
+		if (Arrays.Any(r, new CondicionNombreRepositorioIgual(nombre))) {
+			String msg = "Se ha intentado registrar otro subordinado con nombre: " + nombre;
+			System.err.println(msg);
+			throw new RegistroNoPosibleException(msg);
+		}
 		String[] ruta = { nombre(), nombre };
 		Middleware.nombrarObjeto(referencia, ruta);
 		IRepositorio registrado = (IRepositorio) Middleware.localizar(ruta, IRepositorio.CLASE);
@@ -162,8 +182,16 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 		return registrado.nombre();
 	}
 
-	public byte[] solicitarBloque(String nombre) {
-		// TODO Auto-generated method stub
-		return null;
+	class CondicionNombreRepositorioIgual implements Condicion {
+		private String valor;
+
+		public CondicionNombreRepositorioIgual(String valor) {
+			this.valor = valor;
+		}
+
+		public boolean test(Object objeto) {
+			IRepositorio r = (IRepositorio) objeto;
+			return r.nombre().equals(valor);
+		}
 	}
 }

@@ -30,6 +30,7 @@ public class ITransferenciaServerImpl extends ITransferenciaPOA {
 	public byte[] solicitarBloque() throws ArchivoNoEncontradoException {
 		if (fis == null) {
 			// Ha habido algún error abriendo el archivo.
+			hilo.transferenciaFinalizada();
 			throw new ArchivoNoEncontradoException("El archivo no se ha encontrado en el servidor");
 		}
 

@@ -11,6 +11,11 @@ import java.net.URLDecoder;
 import java.util.Scanner;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
+import com.sun.corba.se.spi.logging.CORBALogDomains;
 
 import middleware.Middleware;
 import repositorio.ArchivoDetalles;
@@ -34,6 +39,9 @@ public class Main {
 	 * @throws InterruptedException
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
+		// CORBALogDomains.RPC_TRANSPORT
+		// Logger.global.setLevel(Level.SEVERE);
+
 		// /////////////////////////////////
 		// Inicializar el repositorio
 		// /////////////////////////////////
@@ -62,11 +70,15 @@ public class Main {
 
 		// Esperar a que el hilo inicialice...
 		// Ñapa para esperar hasta que el hilo servidor haya terminado de cargar
-		Thread.sleep(1);
+		Thread.sleep(100);
 		Main.loadLock.lock();
 		Main.loadLock.unlock();
 
-		menuPrincipal();
+		try {
+			menuPrincipal();
+		} catch (Exception ex) {
+			errorFatal("Ha ocurrido un error");
+		}
 	}
 
 	private static String leeCadenaConfiguracion(String nombre, File directorio) {
@@ -208,13 +220,15 @@ public class Main {
 		// Pues nada, iniciar la descarga en el directorio actual
 
 		FileOutputStream fos = null;
+		File salida = null;
+		boolean borrar = false;
 		int totalRecibidos = 0;
 		try {
 			// Iniciar la descarga
 			ITransferencia transferencia = resultado.repositorio.iniciarDescarga(resultado.nombre);
 			// Crear el archivo local e ir rellenándolo
 			File dir = new File("");
-			File salida = new File(dir.getAbsolutePath(), resultado.archivo);
+			salida = new File(dir.getAbsolutePath(), resultado.archivo);
 			p("Descargando en: " + salida.getAbsolutePath());
 
 			fos = new FileOutputStream(salida);
@@ -228,6 +242,9 @@ public class Main {
 			}
 		} catch (ArchivoNoEncontradoException e) {
 			p("Error: " + e.message);
+			// Borrar el archivo que hemos creado para guardar. Si no se queda
+			// con 0 bytes
+			borrar = true;
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -239,6 +256,12 @@ public class Main {
 				e.printStackTrace();
 			} catch (Exception e) {
 				e.printStackTrace();
+			}
+			if (borrar) {
+				try {
+					salida.delete();
+				} catch (Exception ex) {
+				}
 			}
 		}
 	}
