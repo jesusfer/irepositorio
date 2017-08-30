@@ -1,4 +1,4 @@
-package server;
+package servidor.busqueda;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +20,7 @@ public class IndiceBusqueda {
 		this.repositorio = repositorio;
 	}
 
-	protected void nuevoDocumento(ArchivoDetalles detalles) {
+	public void nuevoDocumento(ArchivoDetalles detalles) {
 		indice.put(detalles.nombre, detalles);
 		// Consola.Mensaje("Indice::nuevoDocumento: " + detalles.nombre);
 	}

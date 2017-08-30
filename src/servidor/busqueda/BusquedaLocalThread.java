@@ -1,7 +1,6 @@
-package server;
+package servidor.busqueda;
 
 import repositorio.Coincidencia;
-import repositorio.IRepositorio;
 
 public class BusquedaLocalThread extends Thread implements IBusquedaThread {
 	private IndiceBusqueda indice;

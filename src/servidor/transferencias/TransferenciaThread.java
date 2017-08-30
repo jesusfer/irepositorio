@@ -1,18 +1,16 @@
-package server;
+package servidor.transferencias;
 
 import middleware.Middleware;
 import repositorio.ArchivoDetalles;
 import repositorio.ITransferencia;
 
 public class TransferenciaThread extends Thread {
-	private ArchivoDetalles detalles;
 	private ITransferencia transferencia;
 	private ITransferenciaServerImpl transferServant;
 	private boolean transferenciaEnProgreso;
 
 	public TransferenciaThread(ArchivoDetalles detalles) {
 		setName("TransferThread");
-		this.detalles = detalles;
 		transferServant = new ITransferenciaServerImpl(detalles, this);
 		transferencia = (ITransferencia) Middleware.registrar(transferServant, "repositorio.ITransferencia");
 		transferenciaEnProgreso = true;

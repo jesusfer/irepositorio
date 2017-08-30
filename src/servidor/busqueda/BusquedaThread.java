@@ -1,4 +1,4 @@
-package server;
+package servidor.busqueda;
 
 import repositorio.Coincidencia;
 import repositorio.IRepositorio;

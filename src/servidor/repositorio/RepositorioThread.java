@@ -1,11 +1,12 @@
-package server;
+package servidor.repositorio;
 
-import java.net.ConnectException;
 import java.util.Properties;
 
 import middleware.JavaORB;
 import middleware.Middleware;
 import repositorio.IRepositorio;
+import servidor.Main;
+import servidor.busqueda.IndiceBusqueda;
 
 /**
  * Este hilo se encarga de crear el servidor para responder a llamadas remotas
@@ -35,7 +36,7 @@ public class RepositorioThread extends Thread {
 
 	@Override
 	public void run() {
-		MainRepositorio.loadLock.lock();
+		Main.loadLock.lock();
 		// /////////////////////////////////
 		// Inicializar middleware
 		// /////////////////////////////////
@@ -82,7 +83,7 @@ public class RepositorioThread extends Thread {
 			// He de buscar el repositorio raiz
 			repositorioRaiz = localizarRepositorio(cfgRaiz);
 			if (repositorioRaiz == null) {
-				MainRepositorio.errorFatal("No se ha podido localizar el repositorio raiz!");
+				Main.errorFatal("No se ha podido localizar el repositorio raiz!");
 			}
 			// System.out.println("Raiz encontrada: " +
 			// repositorioRaiz.nombre());
@@ -93,7 +94,7 @@ public class RepositorioThread extends Thread {
 			} else {
 				repositorioPadre = localizarRepositorio(cfgPadre);
 				if (repositorioPadre == null) {
-					MainRepositorio.errorFatal("No se ha podido localizar el repositorio padre!");
+					Main.errorFatal("No se ha podido localizar el repositorio padre!");
 				}
 			}
 			// System.out.println("Padre encontrado: " +
@@ -103,12 +104,12 @@ public class RepositorioThread extends Thread {
 			try {
 				repositorio.padre().registrar(repositorio);
 			} catch (Exception ex) {
-				MainRepositorio.errorFatal("Error en el registro como hijo");
+				Main.errorFatal("Error en el registro como hijo");
 			}
 		}
 
 		// Hemos terminado la inicialización
-		MainRepositorio.loadLock.unlock();
+		Main.loadLock.unlock();
 		System.out.println("Repositorio activo...");
 		Middleware.esperar();
 		System.out.println("Repositorio terminando...");

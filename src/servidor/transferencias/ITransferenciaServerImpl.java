@@ -1,4 +1,4 @@
-package server;
+package servidor.transferencias;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -8,6 +8,7 @@ import java.io.IOException;
 import repositorio.ArchivoDetalles;
 import repositorio.ArchivoNoEncontradoException;
 import repositorio.ITransferenciaPOA;
+import servidor.Consola;
 
 public class ITransferenciaServerImpl extends ITransferenciaPOA {
 	private ArchivoDetalles detalles;

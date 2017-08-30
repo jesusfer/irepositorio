@@ -1,4 +1,4 @@
-package server;
+package servidor.repositorio;
 
 import java.util.ArrayList;
 
@@ -8,6 +8,11 @@ import repositorio.ArchivoNoEncontradoException;
 import repositorio.Coincidencia;
 import repositorio.IRepositorio;
 import repositorio.ITransferencia;
+import servidor.busqueda.BusquedaLocalThread;
+import servidor.busqueda.BusquedaThread;
+import servidor.busqueda.IBusquedaThread;
+import servidor.busqueda.IndiceBusqueda;
+import servidor.transferencias.TransferenciaThread;
 
 /**
  * This class is the implementation object for your IDL interface.

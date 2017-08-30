@@ -1,4 +1,4 @@
-package server;
+package servidor;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -6,27 +6,24 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.Properties;
 import java.util.Scanner;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import middleware.Middleware;
 import repositorio.ArchivoDetalles;
 import repositorio.ArchivoNoEncontradoException;
 import repositorio.Coincidencia;
-import repositorio.IRepositorio;
 import repositorio.ITransferencia;
+import servidor.busqueda.IndiceBusqueda;
+import servidor.repositorio.RepositorioThread;
+import utils.Strings;
 
-import middleware.JavaORB;
-import middleware.Middleware;
-
-public class MainRepositorio {
+public class Main {
 	private static RepositorioThread repoThread;
-	protected static Lock loadLock = new ReentrantLock();
+	public static Lock loadLock = new ReentrantLock();
 
 	private static Coincidencia[] ultimaBusqueda;
 
@@ -65,10 +62,10 @@ public class MainRepositorio {
 		// Esperar a que el hilo inicialice...
 		// Ñapa para esperar hasta que el hilo servidor haya terminado de cargar
 		Thread.sleep(1);
-		MainRepositorio.loadLock.lock();
-		MainRepositorio.loadLock.unlock();
+		Main.loadLock.lock();
+		Main.loadLock.unlock();
 
-		verMenuPrincipal();
+		menuPrincipal();
 	}
 
 	private static String leeCadenaConfiguracion(String nombre, File directorio) {
@@ -93,7 +90,6 @@ public class MainRepositorio {
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(archivo));
 			String line = null;
-			String ls = System.getProperty("line.separator");
 			try {
 				while ((line = reader.readLine()) != null) {
 					line = line.trim();
@@ -116,7 +112,7 @@ public class MainRepositorio {
 		return indice;
 	}
 
-	private static void verMenuPrincipal() {
+	private static void menuPrincipal() {
 		while (true) {
 			System.out.println();
 			System.out.format("%nMenú del repositorio%n%n");
@@ -134,16 +130,16 @@ public class MainRepositorio {
 
 				switch (entrada.nextInt()) {
 				case 1:
-					hacerBusqueda();
+					menuBusquedaLocal();
 					break;
 				case 2:
-					hacerBusquedaGlobal();
+					menuBusquedaGlobal();
 					break;
 				case 3:
-					descargarDocumento();
+					menuDescargarDocumento();
 					break;
 				case 4:
-					listarRepositorioLocal();
+					menuListarRepositorioLocal();
 					break;
 				case 9:
 					repoThread.detener();
@@ -157,14 +153,14 @@ public class MainRepositorio {
 		}
 	}
 
-	private static void descargarDocumento() {
+	private static void menuDescargarDocumento() {
 		if (ultimaBusqueda == null || ultimaBusqueda.length == 0) {
 			System.out.println("No se ha hecho una búsqueda o la última búsqueda no tuvo resultados.");
 			return;
 		}
 		// Que el usuario elija un resultado de búsqueda...
 		System.out.println("Ultima búsqueda realizada:");
-		imprimirCoincidencias(ultimaBusqueda);
+		menuImprimirCoincidencias(ultimaBusqueda);
 
 		Scanner in = new Scanner(System.in);
 		System.out.println();
@@ -214,42 +210,42 @@ public class MainRepositorio {
 		}
 	}
 
-	private static void listarRepositorioLocal() {
-		imprimirCoincidencias(repoThread.getIndiceBusqueda().buscar());
+	private static void menuListarRepositorioLocal() {
+		menuImprimirCoincidencias(repoThread.getIndiceBusqueda().buscar());
 	}
 
-	private static void hacerBusquedaGlobal() {
+	private static void menuBusquedaGlobal() {
 		Scanner in = new Scanner(System.in);
 		System.out.print("Palabra? ");
 		String palabra = in.nextLine();
 		try {
 			Coincidencia[] cx = repoThread.getRepositorioRaiz().buscar(palabra);
 			ultimaBusqueda = cx;
-			imprimirCoincidencias(cx);
+			menuImprimirCoincidencias(cx);
 		} catch (Exception ex) {
 			System.err.format("Error buscando globalmente");
 		}
-		volverAlMenu();
+		menuEsperarEntradaUsuario();
 	}
 
-	private static void hacerBusqueda() {
+	private static void menuBusquedaLocal() {
 		Scanner in = new Scanner(System.in);
 		System.out.print("Palabra? ");
 		String palabra = in.nextLine();
 		Coincidencia[] cx = repoThread.getRepositorio().buscar(palabra);
 		ultimaBusqueda = cx;
-		imprimirCoincidencias(cx);
-		volverAlMenu();
+		menuImprimirCoincidencias(cx);
+		menuEsperarEntradaUsuario();
 	}
 
-	private static void volverAlMenu() {
+	private static void menuEsperarEntradaUsuario() {
 		System.out.println();
 		System.out.println("Pulsa Enter para volver al menú...");
 		Scanner in = new Scanner(System.in);
 		in.nextLine();
 	}
 
-	private static void imprimirCoincidencias(Coincidencia[] coincidencias) {
+	private static void menuImprimirCoincidencias(Coincidencia[] coincidencias) {
 		String format = "%-3s%-20s%-20s%-16s%-25s%-25s%n";
 		System.out.format("%nArchivos encontrados (%d)%n%n", coincidencias.length);
 		if (coincidencias.length > 0) {
@@ -259,22 +255,10 @@ public class MainRepositorio {
 					.format(format, "-", "-----------", "------", "-------", "--------------", "----------");
 			for (int i = 0; i < coincidencias.length; i++) {
 				Coincidencia c = coincidencias[i];
-				System.out.format(format, i + 1, c.repositorio.nombre(), c.nombre, c.archivo, join(",",
+				System.out.format(format, i + 1, c.repositorio.nombre(), c.nombre, c.archivo, Strings.join(",",
 						c.palabrasClave), c.comentario);
 			}
 		}
-	}
-
-	private static String join(String caracter, String[] cadenas) {
-		StringBuilder sb = new StringBuilder();
-		if (cadenas.length > 0) {
-			sb.append(cadenas[0]);
-			for (int i = 1; i < cadenas.length; i++) {
-				sb.append(caracter);
-				sb.append(cadenas[i]);
-			}
-		}
-		return sb.toString();
 	}
 
 	/**
