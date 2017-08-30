@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,11 +30,6 @@ public class IndiceBusqueda {
 
 	public void setRepositorio(IRepositorio repositorio) {
 		this.repositorio = repositorio;
-	}
-
-	public void nuevoDocumento(ArchivoDetalles detalles) {
-		indice.put(detalles.nombre, detalles);
-		// Consola.Mensaje("Indice::nuevoDocumento: " + detalles.nombre);
 	}
 
 	public int size() {
@@ -72,11 +68,22 @@ public class IndiceBusqueda {
 		return results.toArray(new Coincidencia[0]);
 	}
 
-	public ArchivoDetalles detallesArchivo(String nombre) throws ArchivoNoEncontradoException {
+	public ArchivoDetalles buscarDetalles(String nombre) throws ArchivoNoEncontradoException {
 		if (!indice.containsKey(nombre)) {
 			throw new ArchivoNoEncontradoException("Archivo no encontrado");
 		}
 		return indice.get(nombre);
+	}
+
+	public void nuevoDocumento(ArchivoDetalles detalles) {
+		indice.put(detalles.nombre, detalles);
+		// Consola.Mensaje("Indice::nuevoDocumento: " + detalles.nombre);
+	}
+
+	public void borrarDocumento(String nombre) {
+		if (indice.containsKey(nombre)) {
+			indice.remove(nombre);
+		}
 	}
 
 	public void guardarEnDisco() {
@@ -121,5 +128,31 @@ public class IndiceBusqueda {
 			e.printStackTrace();
 		}
 		return sb.toString();
+	}
+
+	/**
+	 * El formato de la linea debe ser cadenas quoteadas separadas por comas:
+	 * 
+	 * valor1,valor2,valor3
+	 * 
+	 * Los valores deben estar URLEncoded en UTF-8.
+	 * */
+	public static ArchivoDetalles StringToDetalles(String linea) {
+		ArchivoDetalles detalles = null;
+		String[] parts = linea.split(",");
+		if (parts.length != 5) {
+			Main.errorFatal("Linea de indice incorrecta");
+		}
+		try {
+			String _nombre = URLDecoder.decode(parts[0], "UTF-8");
+			String _archivo = URLDecoder.decode(parts[1], "UTF-8");
+			String _directorio = URLDecoder.decode(parts[2], "UTF-8");
+			String[] _palabrasClave = URLDecoder.decode(parts[3], "UTF-8").split("::");
+			String _comentario = URLDecoder.decode(parts[4], "UTF-8");
+			detalles = new ArchivoDetalles(_nombre, _archivo, _directorio, _palabrasClave, _comentario);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		return detalles;
 	}
 }

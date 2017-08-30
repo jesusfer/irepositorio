@@ -90,13 +90,13 @@ public class Main {
 		File archivo = new File(directorio, nombre);
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(archivo));
-			String line = null;
+			String linea = null;
 			try {
-				while ((line = reader.readLine()) != null) {
-					line = line.trim();
-					if (line.length() == 0 || line.startsWith("#"))
+				while ((linea = reader.readLine()) != null) {
+					linea = linea.trim();
+					if (linea.length() == 0 || linea.startsWith("#"))
 						continue;
-					indice.nuevoDocumento(procesarLineaIndice(line));
+					indice.nuevoDocumento(IndiceBusqueda.StringToDetalles(linea));
 				}
 			} finally {
 				reader.close();
@@ -133,18 +133,24 @@ public class Main {
 				switch (entrada.nextInt()) {
 				case 1:
 					menuBusquedaLocal();
+					menuEsperarEntradaUsuario();
 					break;
 				case 2:
 					menuBusquedaGlobal();
+					menuEsperarEntradaUsuario();
 					break;
 				case 3:
 					menuDescargarDocumento();
 					break;
 				case 4:
 					menuListarRepositorioLocal();
+					menuEsperarEntradaUsuario();
 					break;
 				case 5:
 					menuInsertarDocumento();
+					break;
+				case 6:
+					menuEliminarDocumento();
 					break;
 				case 9:
 					repoThread.detener();
@@ -165,7 +171,6 @@ public class Main {
 		Coincidencia[] cx = repoThread.getRepositorio().buscar(palabra);
 		ultimaBusqueda = cx;
 		menuImprimirCoincidencias(cx);
-		menuEsperarEntradaUsuario();
 	}
 
 	private static void menuBusquedaGlobal() {
@@ -179,7 +184,6 @@ public class Main {
 		} catch (Exception ex) {
 			System.err.println("Error buscando globalmente");
 		}
-		menuEsperarEntradaUsuario();
 	}
 
 	private static void menuDescargarDocumento() {
@@ -193,7 +197,7 @@ public class Main {
 
 		Scanner in = new Scanner(System.in);
 		p();
-		System.out.print("# de resultado? ");
+		f("# de resultado? ");
 		int indice = in.nextInt() - 1;
 		if (indice > ultimaBusqueda.length) {
 			p("No es un resultado válido...");
@@ -240,8 +244,8 @@ public class Main {
 	}
 
 	private static void menuListarRepositorioLocal() {
-		menuImprimirCoincidencias(repoThread.getIndiceBusqueda().buscar());
-		menuEsperarEntradaUsuario();
+		Coincidencia[] todas = repoThread.getIndiceBusqueda().buscar();
+		menuImprimirCoincidencias(todas);
 	}
 
 	private static void menuInsertarDocumento() {
@@ -273,9 +277,37 @@ public class Main {
 					respuestas[4]);
 			repoThread.getIndiceBusqueda().nuevoDocumento(nuevo);
 			repoThread.getIndiceBusqueda().guardarEnDisco();
-			p("Guardado");
+			f("Guardado (%s)", nuevo.nombre);
+			p();
 		} else {
 			p("No se ha guardado");
+		}
+	}
+
+	private static void menuEliminarDocumento() {
+		Coincidencia[] todas = repoThread.getIndiceBusqueda().buscar();
+		menuImprimirCoincidencias(todas);
+
+		Scanner in = new Scanner(System.in);
+		p();
+		f("# a borrar? ");
+		int indice = in.nextInt() - 1;
+		if (indice > todas.length) {
+			p("No es un resultado válido...");
+		}
+		// Para consumir el salto de linea después del número?
+		in.nextLine();
+		f("Seguro? (s/n)");
+		boolean seguro = in.nextLine().equals("s");
+		if (seguro) {
+			Coincidencia resultado = todas[indice];
+			repoThread.getIndiceBusqueda().borrarDocumento(resultado.nombre);
+			repoThread.getIndiceBusqueda().guardarEnDisco();
+			p();
+			f("Borrado (%s)", resultado.nombre);
+			p();
+		} else {
+			p("No se ha borrado nada.");
 		}
 	}
 
@@ -298,32 +330,6 @@ public class Main {
 						c.palabrasClave), c.comentario);
 			}
 		}
-	}
-
-	/**
-	 * El formato de la linea debe ser cadenas quoteadas separadas por comas:
-	 * 
-	 * valor1,valor2,valor3
-	 * 
-	 * Los valores deben estar URLEncoded en UTF-8.
-	 * */
-	private static ArchivoDetalles procesarLineaIndice(String line) {
-		ArchivoDetalles detalles = null;
-		String[] parts = line.split(",");
-		if (parts.length != 5) {
-			errorFatal("Linea de indice incorrecta");
-		}
-		try {
-			String _nombre = URLDecoder.decode(parts[0], "UTF-8");
-			String _archivo = URLDecoder.decode(parts[1], "UTF-8");
-			String _directorio = URLDecoder.decode(parts[2], "UTF-8");
-			String[] _palabrasClave = URLDecoder.decode(parts[3], "UTF-8").split("::");
-			String _comentario = URLDecoder.decode(parts[4], "UTF-8");
-			detalles = new ArchivoDetalles(_nombre, _archivo, _directorio, _palabrasClave, _comentario);
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-		return detalles;
 	}
 
 	public static File getDirectorioConfiguracion() {

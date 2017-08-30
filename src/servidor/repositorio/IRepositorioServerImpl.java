@@ -132,7 +132,7 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 		// Se solicita la descarga de un archivo
 		// Se busca el archivo en el índice y se pasan los detalles a la nueva
 		// transferencia
-		ArchivoDetalles detalles = indice.detallesArchivo(nombre);
+		ArchivoDetalles detalles = indice.buscarDetalles(nombre);
 		TransferenciaThread hilo = new TransferenciaThread(detalles);
 		return hilo.getTransferencia();
 	}
