@@ -243,6 +243,7 @@ public class Main {
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
+			p();
 			try {
 				fos.close();
 			} catch (IOException e) {
