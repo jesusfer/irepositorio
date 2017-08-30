@@ -8,7 +8,6 @@ import java.io.IOException;
 import repositorio.ArchivoDetalles;
 import repositorio.ArchivoNoEncontradoException;
 import repositorio.ITransferenciaPOA;
-import servidor.Consola;
 
 public class ITransferenciaServerImpl extends ITransferenciaPOA {
 	private ArchivoDetalles detalles;
@@ -53,7 +52,7 @@ public class ITransferenciaServerImpl extends ITransferenciaPOA {
 				}
 			}
 		} catch (Exception e) {
-			Consola.Mensaje("Error leyendo del archivo para xfer: " + detalles.archivo);
+			System.err.println("Error leyendo del archivo para xfer: " + detalles.archivo);
 			try {
 				fis.close();
 			} catch (IOException e1) {

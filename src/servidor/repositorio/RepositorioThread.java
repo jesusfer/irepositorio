@@ -2,9 +2,6 @@ package servidor.repositorio;
 
 import java.util.Properties;
 
-import com.sun.corba.se.impl.logging.ORBUtilSystemException;
-import com.sun.corba.se.spi.logging.CORBALogDomains;
-
 import middleware.JavaORB;
 import middleware.Middleware;
 import repositorio.IRepositorio;
