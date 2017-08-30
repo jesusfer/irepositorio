@@ -29,7 +29,8 @@ public class TransferenciaThread extends Thread {
 	public void run() {
 		try {
 			while (transferenciaEnProgreso) {
-				Thread.sleep(1);
+				// Podemos usar un Lock en vez de Sleep?
+				Thread.sleep(10);
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();

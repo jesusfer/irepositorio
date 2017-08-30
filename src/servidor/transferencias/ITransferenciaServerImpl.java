@@ -35,19 +35,19 @@ public class ITransferenciaServerImpl extends ITransferenciaPOA {
 
 		byte[] resultado = new byte[bloque];
 		try {
-			int read = fis.read(resultado);
-			if (read == -1) {
+			int leidos = fis.read(resultado);
+			if (leidos == -1) {
 				fis.close();
 				// Hemos terminado de leer el archivo
 				hilo.transferenciaFinalizada();
 				return new byte[0];
 			}
 			// Para el caso del último bloque, ajustar el array al tamaño leído
-			// real ya que no podemos indicar hasta donde llegar
-			if (read < bloque) {
+			// real ya que no podemos indicar hasta donde llegar al enviarlo
+			if (leidos < bloque) {
 				byte[] temp = resultado.clone();
-				resultado = new byte[read];
-				for (int i = 0; i < read; i++) {
+				resultado = new byte[leidos];
+				for (int i = 0; i < leidos; i++) {
 					resultado[i] = temp[i];
 				}
 			}
@@ -60,6 +60,7 @@ public class ITransferenciaServerImpl extends ITransferenciaPOA {
 			}
 		}
 		try {
+			// Por si queremos simular lentitud
 			Thread.sleep(0);
 		} catch (InterruptedException e) {
 			e.printStackTrace();

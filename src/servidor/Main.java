@@ -25,6 +25,7 @@ public class Main {
 	private static RepositorioThread repoThread;
 	public static Lock loadLock = new ReentrantLock();
 
+	private static File directorioConfiguracion;
 	private static Coincidencia[] ultimaBusqueda;
 
 	/**
@@ -37,24 +38,24 @@ public class Main {
 		// Inicializar el repositorio
 		// /////////////////////////////////
 
-		File directorioConfiguracion = new File(args.length == 1 ? args[0] : "");
+		directorioConfiguracion = new File(args.length == 1 ? args[0] : "");
 		if (!directorioConfiguracion.exists()) {
 			errorFatal("Config dir doesn't exist! (" + directorioConfiguracion.getAbsolutePath() + ")");
 		}
 
-		// System.out.println("Config dir: " +
+		// p("Config dir: " +
 		// directorioConfiguracion.getAbsolutePath());
 
 		// Leer archivos de configuracion sencillos
-		String cfgPadre = leeCadenaConfiguracion("RepositorioPadre.cfg", directorioConfiguracion);
-		String cfgRaiz = leeCadenaConfiguracion("RepositorioRaiz.cfg", directorioConfiguracion);
-		String cfgNombre = leeCadenaConfiguracion("NombreRepositorio.cfg", directorioConfiguracion);
+		String cfgPadre = leeCadenaConfiguracion(Constantes.RepositorioPadre, directorioConfiguracion);
+		String cfgRaiz = leeCadenaConfiguracion(Constantes.RepositorioRaiz, directorioConfiguracion);
+		String cfgNombre = leeCadenaConfiguracion(Constantes.RepositorioNombre, directorioConfiguracion);
 
-		// System.out.println("Repo raiz: " + cfgRaiz);
-		System.out.println("Repo nombre: " + cfgNombre);
-		// System.out.println("Repo padre: " + cfgPadre);
+		// p("Repo raiz: " + cfgRaiz);
+		p("Repo nombre: " + cfgNombre);
+		// p("Repo padre: " + cfgPadre);
 
-		IndiceBusqueda indice = cargarIndice("ListaArchivos.cfg", directorioConfiguracion);
+		IndiceBusqueda indice = cargarIndice(Constantes.ArchivoIndice, directorioConfiguracion);
 
 		repoThread = new RepositorioThread(cfgNombre, cfgPadre, cfgRaiz, indice);
 		repoThread.start();
@@ -114,15 +115,16 @@ public class Main {
 
 	private static void menuPrincipal() {
 		while (true) {
-			System.out.println();
-			System.out.format("%nMenú del repositorio%n%n");
-			System.out.println("1. Buscar documentos en este repositorio (y subordinados)");
-			System.out.println("2. Buscar documentos globalmente");
-			System.out.println("3. Descargar documento");
-			System.out.println("4. Listar documentos en el repositorio local");
-			System.out.println("5. Insertar documento en el repositorio local");
-			System.out.println("6. Eliminar documento en el repositorio local");
-			System.out.println("9. Exit");
+			p();
+			p("Menú del repositorio");
+			p();
+			p("1. Buscar documentos en este repositorio (y subordinados)");
+			p("2. Buscar documentos globalmente");
+			p("3. Descargar documento");
+			p("4. Listar documentos en el repositorio local");
+			p("5. Insertar documento en el repositorio local");
+			p("6. Eliminar documento en el repositorio local");
+			p("9. Exit");
 			System.out.print("> ");
 
 			Scanner entrada = new Scanner(System.in);
@@ -141,6 +143,9 @@ public class Main {
 				case 4:
 					menuListarRepositorioLocal();
 					break;
+				case 5:
+					menuInsertarDocumento();
+					break;
 				case 9:
 					repoThread.detener();
 					Middleware.detener();
@@ -153,25 +158,48 @@ public class Main {
 		}
 	}
 
+	private static void menuBusquedaLocal() {
+		Scanner in = new Scanner(System.in);
+		System.out.print("Palabra? ");
+		String palabra = in.nextLine();
+		Coincidencia[] cx = repoThread.getRepositorio().buscar(palabra);
+		ultimaBusqueda = cx;
+		menuImprimirCoincidencias(cx);
+		menuEsperarEntradaUsuario();
+	}
+
+	private static void menuBusquedaGlobal() {
+		Scanner in = new Scanner(System.in);
+		System.out.print("Palabra? ");
+		String palabra = in.nextLine();
+		try {
+			Coincidencia[] cx = repoThread.getRepositorioRaiz().buscar(palabra);
+			ultimaBusqueda = cx;
+			menuImprimirCoincidencias(cx);
+		} catch (Exception ex) {
+			System.err.println("Error buscando globalmente");
+		}
+		menuEsperarEntradaUsuario();
+	}
+
 	private static void menuDescargarDocumento() {
 		if (ultimaBusqueda == null || ultimaBusqueda.length == 0) {
-			System.out.println("No se ha hecho una búsqueda o la última búsqueda no tuvo resultados.");
+			p("No se ha hecho una búsqueda o la última búsqueda no tuvo resultados.");
 			return;
 		}
 		// Que el usuario elija un resultado de búsqueda...
-		System.out.println("Ultima búsqueda realizada:");
+		p("Ultima búsqueda realizada:");
 		menuImprimirCoincidencias(ultimaBusqueda);
 
 		Scanner in = new Scanner(System.in);
-		System.out.println();
+		p();
 		System.out.print("# de resultado? ");
 		int indice = in.nextInt() - 1;
 		if (indice > ultimaBusqueda.length) {
-			System.out.println("No es un resultado válido...");
+			p("No es un resultado válido...");
 		}
 		Coincidencia resultado = ultimaBusqueda[indice];
-		System.out.format("Iniciando descarga de '%s' desde '%s'%n", resultado.nombre, resultado.repositorio
-				.nombre());
+		f("Iniciando descarga de '%s' desde '%s'%n", resultado.nombre, resultado.repositorio.nombre());
 
 		// Pues nada, iniciar la descarga en el directorio actual
 
@@ -183,18 +211,19 @@ public class Main {
 			// Crear el archivo local e ir rellenándolo
 			File dir = new File("");
 			File salida = new File(dir.getAbsolutePath(), resultado.archivo);
-			System.out.println("Descargando en: " + salida.getAbsolutePath());
+			p("Descargando en: " + salida.getAbsolutePath());
+
 			fos = new FileOutputStream(salida);
 			byte[] leidos = transferencia.solicitarBloque();
 			while (leidos.length > 0) {
 				fos.write(leidos);
 				totalRecibidos += leidos.length;
 				leidos = transferencia.solicitarBloque();
-				System.out.format("%-10s %12d\r", "Recibidos:", totalRecibidos);
+				f("%-10s %12d\r", "Recibidos:", totalRecibidos);
 				System.out.flush();
 			}
 		} catch (ArchivoNoEncontradoException e) {
-			System.out.println("Error: " + e.message);
+			p("Error: " + e.message);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -212,50 +241,60 @@ public class Main {
 
 	private static void menuListarRepositorioLocal() {
 		menuImprimirCoincidencias(repoThread.getIndiceBusqueda().buscar());
+		menuEsperarEntradaUsuario();
 	}
 
-	private static void menuBusquedaGlobal() {
+	private static void menuInsertarDocumento() {
+		String[] preguntas = { "Nombre documento", "Nombre archivo", "Directorio", "Palabras clave (::)",
+				"Comentario" };
+		// Obtener detalles del nuevo archivo
+		String[] respuestas = new String[preguntas.length];
 		Scanner in = new Scanner(System.in);
-		System.out.print("Palabra? ");
-		String palabra = in.nextLine();
-		try {
-			Coincidencia[] cx = repoThread.getRepositorioRaiz().buscar(palabra);
-			ultimaBusqueda = cx;
-			menuImprimirCoincidencias(cx);
-		} catch (Exception ex) {
-			System.err.format("Error buscando globalmente");
+		int index = 0;
+		for (String mensaje : preguntas) {
+			f("%-20s? ", mensaje);
+			respuestas[index++] = in.nextLine();
 		}
-		menuEsperarEntradaUsuario();
-	}
-
-	private static void menuBusquedaLocal() {
-		Scanner in = new Scanner(System.in);
-		System.out.print("Palabra? ");
-		String palabra = in.nextLine();
-		Coincidencia[] cx = repoThread.getRepositorio().buscar(palabra);
-		ultimaBusqueda = cx;
-		menuImprimirCoincidencias(cx);
-		menuEsperarEntradaUsuario();
+		// Revisar que todo esté bien y pedir confirmación
+		// p("Nuevo documento:");
+		// index = 0;
+		// for (String mensaje : preguntas) {
+		// f("%20s: %s", mensaje, respuestas[index++]);
+		// }
+		p();
+		f("Guardar? (s/n)");
+		boolean guardar = in.nextLine().equals("s");
+		if (guardar) {
+			ArchivoDetalles nuevo = new ArchivoDetalles( //
+					respuestas[0], //
+					respuestas[1], //
+					respuestas[2], //
+					respuestas[3].split("::"), //
+					respuestas[4]);
+			repoThread.getIndiceBusqueda().nuevoDocumento(nuevo);
+			repoThread.getIndiceBusqueda().guardarEnDisco();
+			p("Guardado");
+		} else {
+			p("No se ha guardado");
+		}
 	}
 
 	private static void menuEsperarEntradaUsuario() {
-		System.out.println();
-		System.out.println("Pulsa Enter para volver al menú...");
+		p();
+		p("Pulsa Enter para volver al menú...");
 		Scanner in = new Scanner(System.in);
 		in.nextLine();
 	}
 
 	private static void menuImprimirCoincidencias(Coincidencia[] coincidencias) {
 		String format = "%-3s%-20s%-20s%-16s%-25s%-25s%n";
-		System.out.format("%nArchivos encontrados (%d)%n%n", coincidencias.length);
+		f("%nArchivos encontrados (%d)%n%n", coincidencias.length);
 		if (coincidencias.length > 0) {
-			System.out
-					.format(format, "#", "Repositorio", "Nombre", "Archivo", "Palabras clave", "Comentario");
-			System.out
-					.format(format, "-", "-----------", "------", "-------", "--------------", "----------");
+			f(format, "#", "Repositorio", "Nombre", "Archivo", "Palabras clave", "Comentario");
+			f(format, "-", "-----------", "------", "-------", "--------------", "----------");
 			for (int i = 0; i < coincidencias.length; i++) {
 				Coincidencia c = coincidencias[i];
-				System.out.format(format, i + 1, c.repositorio.nombre(), c.nombre, c.archivo, Strings.join(",",
+				f(format, i + 1, c.repositorio.nombre(), c.nombre, c.archivo, Strings.join(",",
 						c.palabrasClave), c.comentario);
 			}
 		}
@@ -287,9 +326,25 @@ public class Main {
 		return detalles;
 	}
 
+	public static File getDirectorioConfiguracion() {
+		return directorioConfiguracion;
+	}
+
 	public static void errorFatal(String msg) {
 		System.err.println(msg);
-		System.err.println("Exiting...");
+		System.err.println("Terminando...");
 		System.exit(1);
+	}
+
+	public static void p() {
+		System.out.println();
+	}
+
+	public static void p(String s) {
+		System.out.println(s);
+	}
+
+	public static void f(String format, Object... args) {
+		System.out.format(format, args);
 	}
 }

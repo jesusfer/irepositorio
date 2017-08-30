@@ -104,7 +104,7 @@ public class RepositorioThread extends Thread {
 			try {
 				repositorio.padre().registrar(repositorio);
 			} catch (Exception ex) {
-				Main.errorFatal("Error en el registro como hijo");
+				Main.errorFatal("Error en el registro como subordinado");
 			}
 		}
 
