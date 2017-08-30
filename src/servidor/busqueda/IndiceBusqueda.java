@@ -2,10 +2,8 @@ package servidor.busqueda;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -54,6 +52,30 @@ public class IndiceBusqueda {
 	 * Buscar si una palabra clave está en el índice.
 	 * */
 	public Coincidencia[] buscar(String palabra) {
+		// En realidad si se ponen varias palabras deberíamos tener resultados
+		// de todas
+		ArrayList<String> palabras = new ArrayList<String>();
+		if (palabra.indexOf(" ") != -1) {
+			palabras.add(palabra);
+		}
+		for (String p : palabra.split(" ")) {
+			palabras.add(p);
+		}
+		ArrayList<Coincidencia> results = new ArrayList<Coincidencia>();
+
+		for (String p : palabras) {
+			ArrayList<Coincidencia> temp = _buscar(p);
+			for (Coincidencia c : temp) {
+				if (!existeCoincidencia(results, c)) {
+					results.add(c);
+				}
+			}
+		}
+
+		return results.toArray(new Coincidencia[0]);
+	}
+
+	private ArrayList<Coincidencia> _buscar(String palabra) {
 		palabra = palabra.trim().toLowerCase();
 		ArrayList<Coincidencia> results = new ArrayList<Coincidencia>();
 
@@ -65,7 +87,18 @@ public class IndiceBusqueda {
 				}
 			}
 		}
-		return results.toArray(new Coincidencia[0]);
+		return results;
+	}
+
+	private boolean existeCoincidencia(ArrayList<Coincidencia> results, Coincidencia c) {
+		boolean result = false;
+		for (Coincidencia r : results) {
+			if (r.nombre.equals(c.nombre)) {
+				result = true;
+				break;
+			}
+		}
+		return result;
 	}
 
 	public ArchivoDetalles buscarDetalles(String nombre) throws ArchivoNoEncontradoException {
