@@ -13,12 +13,12 @@ public class BusquedaLocalThread extends Thread implements IBusquedaThread {
 		start();
 	}
 
+	public Coincidencia[] getResultados() {
+		return resultados;
+	}
+
 	@Override
 	public void run() {
 		resultados = this.indice.buscar(palabra);
-	}
-
-	public Coincidencia[] getResultados() {
-		return resultados;
 	}
 }

@@ -11,7 +11,7 @@ import servidor.busqueda.IndiceBusqueda;
 /**
  * Este hilo se encarga de crear el servidor para responder a llamadas remotas
  * para este Repositorio
- * */
+ */
 public class RepositorioThread extends Thread {
 	private String cfgNombre;
 	private String cfgPadre;
@@ -24,6 +24,18 @@ public class RepositorioThread extends Thread {
 	private IRepositorio repositorio;
 	private IRepositorio repositorioRaiz;
 	private IRepositorio repositorioPadre;
+
+	public IRepositorio getRepositorio() {
+		return repositorio;
+	}
+
+	public IRepositorio getRepositorioRaiz() {
+		return repositorioRaiz;
+	}
+
+	public IndiceBusqueda getIndiceBusqueda() {
+		return indice;
+	}
 
 	public RepositorioThread(String cfgNombre, String cfgPadre, String cfgRaiz, IndiceBusqueda indice) {
 		super("RepoThread");
@@ -42,14 +54,18 @@ public class RepositorioThread extends Thread {
 		// /////////////////////////////////
 
 		// System.out.println("Inicializando Middleware");
-		Properties props = new Properties();
-		JavaORB mdlw = new JavaORB();
-		// mdlw.opcionesLC = args;
-		mdlw.opcionesProp = props;
-		mdlw.nombreSN = "OrgRepos";
-		Middleware.inicializar(mdlw);
+		try {
+			Properties props = new Properties();
+			JavaORB mdlw = new JavaORB();
+			// mdlw.opcionesLC = args;
+			mdlw.opcionesProp = props;
+			mdlw.nombreSN = "OrgRepos";
+			Middleware.inicializar(mdlw);
+		} catch (Exception e) {
+			Main.errorFatal("Error iniciando el repositorio: " + e.getMessage());
+		}
 
-		// Creación del sirviente y registrarlo
+		// CreaciÃ³n del sirviente y registrarlo
 		System.out.println("Creando y registrando el repositorio");
 		sirviente = new IRepositorioServerImpl(indice);
 		repositorio = (IRepositorio) Middleware.registrar(sirviente, IRepositorio.CLASE);
@@ -59,13 +75,19 @@ public class RepositorioThread extends Thread {
 		repositorio.nombre(cfgNombre);
 
 		// Me registro en el raiz para que puedan localizarme por nombre
-		// rápidamente
+		// rÃ¡pidamente
 		// Registro un contexto con el nombre del repositorio
 		// Y dentro del contexto un objeto que apunta al IRepositorio
-		// Así puedo colgar referencias también a mis hijos del contexto
+		// Asï¿½ puedo colgar referencias tambiï¿½n a mis hijos del contexto
 		String[] nombresContexto = { cfgNombre };
 		String[] nombresRepositorio = { cfgNombre, IRepositorio.CLAVE };
-		IRepositorio x = (IRepositorio) Middleware.localizar(nombresRepositorio, IRepositorio.CLASE);
+		IRepositorio x = null;
+		try {
+			x = (IRepositorio) Middleware.localizar(nombresRepositorio, IRepositorio.CLASE);
+		} catch (Exception ex) {
+			// Si esto falla, el servidor de nombres quizÃ¡ no estÃ© arrancado
+			Main.errorFatal("Error inicializando, buscÃ¡ndome. Â¿EstÃ¡ el servidor de nombres iniciado?");
+		}
 		if (x != null) {
 			boolean continuar = false;
 			try {
@@ -87,21 +109,21 @@ public class RepositorioThread extends Thread {
 		boolean soyRaiz = cfgRaiz.equals(cfgNombre);
 
 		if (soyRaiz) {
-			System.out.println("Este repositorio es el raiz del sistema");
+			System.out.println("Este repositorio es el raÃ­z del sistema");
 			repositorioRaiz = repositorio;
 			repositorioPadre = repositorio;
 		} else {
-			System.out.println("Este no es el repositorio raiz");
+			System.out.println("Este no es el repositorio raÃ­z");
 
 			// He de buscar el repositorio raiz
 			repositorioRaiz = localizarRepositorio(cfgRaiz);
 			if (repositorioRaiz == null) {
-				Main.errorFatal("No se ha podido localizar el repositorio raiz!");
+				Main.errorFatal("No se ha podido localizar el repositorio raÃ­z!");
 			}
 			// System.out.println("Raiz encontrada: " +
 			// repositorioRaiz.nombre());
 
-			// Y también a mi padre
+			// Y tambiï¿½n a mi padre
 			if (cfgRaiz.equals(cfgPadre)) {
 				repositorioPadre = repositorioRaiz;
 			} else {
@@ -121,7 +143,7 @@ public class RepositorioThread extends Thread {
 			}
 		}
 
-		// Hemos terminado la inicialización
+		// Hemos terminado la inicializaciï¿½n
 		Main.loadLock.unlock();
 		System.out.println("Repositorio activo...");
 		Middleware.esperar();
@@ -133,8 +155,8 @@ public class RepositorioThread extends Thread {
 			try {
 				repositorioPadre.baja(cfgNombre);
 			} catch (Exception e) {
-//				e.printStackTrace();
-				System.err.println("Error dando de baja. Quizá el padre se ha muerto?");
+				// e.printStackTrace();
+				System.err.println("Error dando de baja. QuizÃ¡ el padre se ha muerto?");
 			}
 		}
 		// Middleware.desregistrar(sirviente);
@@ -144,22 +166,10 @@ public class RepositorioThread extends Thread {
 		IRepositorio repo;
 		// En realidad, el nombre es el nombre del contexto y dentro del
 		// contexto
-		// encontraré el repositorio usando la clave
+		// encontrarï¿½ el repositorio usando la clave
 		String[] ruta = { nombre, IRepositorio.CLAVE };
 		repo = (IRepositorio) Middleware.localizar(ruta, IRepositorio.CLASE);
 
 		return repo;
-	}
-
-	public IRepositorio getRepositorio() {
-		return repositorio;
-	}
-
-	public IRepositorio getRepositorioRaiz() {
-		return repositorioRaiz;
-	}
-
-	public IndiceBusqueda getIndiceBusqueda() {
-		return indice;
 	}
 }

@@ -36,71 +36,79 @@ public class IndiceBusqueda {
 
 	/**
 	 * Devolver todos los archivos del indice.
-	 * */
+	 */
 	public Coincidencia[] buscar() {
-		ArrayList<Coincidencia> results = new ArrayList<Coincidencia>();
+		ArrayList<Coincidencia> resultados = new ArrayList<Coincidencia>();
 
 		for (ArchivoDetalles det : indice.values()) {
-			results.add(new Coincidencia(repositorio.nombre(), repositorio, det.nombre, det.archivo,
+			resultados.add(new Coincidencia(repositorio.nombre(), repositorio, det.nombre, det.archivo,
 					det.palabrasClave, det.comentario));
 		}
 
-		return results.toArray(new Coincidencia[0]);
+		return resultados.toArray(new Coincidencia[0]);
 	}
 
 	/**
-	 * Buscar si una palabra clave est� en el �ndice.
-	 * */
-	public Coincidencia[] buscar(String palabra) {
-		// En realidad si se ponen varias palabras deber�amos tener resultados
+	 * Divide la consulta en varias palabras y hace una búsqueda por cada una.
+	 */
+	public Coincidencia[] buscar(String consulta) {
+		// En realidad si se ponen varias palabras deberíamos tener resultados
 		// de todas
 		ArrayList<String> palabras = new ArrayList<String>();
-		if (palabra.indexOf(" ") != -1) {
-			palabras.add(palabra);
+		if (consulta.indexOf(" ") != -1) {
+			palabras.add(consulta);
 		}
-		for (String p : palabra.split(" ")) {
-			palabras.add(p);
+		for (String p : consulta.split(" ")) {
+			palabras.add(p.trim().toLowerCase());
 		}
-		ArrayList<Coincidencia> results = new ArrayList<Coincidencia>();
+		ArrayList<Coincidencia> resultados = new ArrayList<Coincidencia>();
 
 		for (String p : palabras) {
-			ArrayList<Coincidencia> temp = _buscar(p);
+			ArrayList<Coincidencia> temp = buscarPalabra(p);
 			for (Coincidencia c : temp) {
-				if (!existeCoincidencia(results, c)) {
-					results.add(c);
+				if (!existeCoincidencia(resultados, c)) {
+					resultados.add(c);
 				}
 			}
 		}
 
-		return results.toArray(new Coincidencia[0]);
+		return resultados.toArray(new Coincidencia[0]);
 	}
 
-	private ArrayList<Coincidencia> _buscar(String palabra) {
-		palabra = palabra.trim().toLowerCase();
-		ArrayList<Coincidencia> results = new ArrayList<Coincidencia>();
+	/**
+	 * Buscar si una palabra clave está en el índice.
+	 */
+	private ArrayList<Coincidencia> buscarPalabra(String palabra) {
+		ArrayList<Coincidencia> resultados = new ArrayList<Coincidencia>();
 
 		for (ArchivoDetalles det : indice.values()) {
 			for (int i = 0; i < det.palabrasClave.length; i++) {
 				if (det.palabrasClave[i].trim().toLowerCase().equals(palabra)) {
-					results.add(new Coincidencia(repositorio.nombre(), repositorio, det.nombre, det.archivo,
+					resultados.add(new Coincidencia(repositorio.nombre(), repositorio, det.nombre, det.archivo,
 							det.palabrasClave, det.comentario));
 				}
 			}
 		}
-		return results;
+		return resultados;
 	}
 
-	private boolean existeCoincidencia(ArrayList<Coincidencia> results, Coincidencia c) {
-		boolean result = false;
-		for (Coincidencia r : results) {
+	/**
+	 * ¿Existe la coincidencia en la lista?
+	 */
+	private boolean existeCoincidencia(ArrayList<Coincidencia> resultados, Coincidencia c) {
+		boolean resultado = false;
+		for (Coincidencia r : resultados) {
 			if (r.nombre.equals(c.nombre)) {
-				result = true;
+				resultado = true;
 				break;
 			}
 		}
-		return result;
+		return resultado;
 	}
 
+	/**
+	 * Devuelve el objeto ArchivoDetalles del documento con nombre nombre
+	 */
 	public ArchivoDetalles buscarDetalles(String nombre) throws ArchivoNoEncontradoException {
 		if (!indice.containsKey(nombre)) {
 			throw new ArchivoNoEncontradoException("Archivo no encontrado");
@@ -114,14 +122,12 @@ public class IndiceBusqueda {
 	}
 
 	public void borrarDocumento(String nombre) {
-		if (indice.containsKey(nombre)) {
-			indice.remove(nombre);
-		}
+		indice.remove(nombre);
 	}
 
 	public void guardarEnDisco() {
 		String directorio = Main.getDirectorioConfiguracion().getAbsolutePath();
-		File archivoLista = new File(directorio, Constantes.ArchivoIndice);
+		File archivoLista = new File(directorio, Constantes.ARCHIVO_INDICE);
 		BufferedWriter bw = null;
 		try {
 			bw = new BufferedWriter(new FileWriter(archivoLista));
@@ -142,9 +148,9 @@ public class IndiceBusqueda {
 	}
 
 	/**
-	 * Cada linea debe tener el siguiente formato
+	 * Cada línea debe tener el siguiente formato
 	 * nombre,archivo,directorio,palabrasClave,comentario
-	 * */
+	 */
 	private String DetallesToString(ArchivoDetalles detalles) {
 		StringBuilder sb = new StringBuilder();
 		try {
@@ -164,12 +170,18 @@ public class IndiceBusqueda {
 	}
 
 	/**
-	 * El formato de la linea debe ser cadenas quoteadas separadas por comas:
+	 * El formato de la línea debe ser cadenas quoteadas separadas por comas:
 	 * 
 	 * valor1,valor2,valor3
 	 * 
+	 * Cada linea debe tener el siguiente formato
+	 * nombre,archivo,directorio,palabrasClave,comentario
+	 * 
+	 * - nombre debe ser unico para cada archivo - Las palabras clave deben estar
+	 * separadas por ::
+	 * 
 	 * Los valores deben estar URLEncoded en UTF-8.
-	 * */
+	 */
 	public static ArchivoDetalles StringToDetalles(String linea) {
 		ArchivoDetalles detalles = null;
 		String[] parts = linea.split(",");
@@ -178,17 +190,13 @@ public class IndiceBusqueda {
 			Main.errorFatal("Linea de indice incorrecta");
 		}
 		try {
-			String _nombre = URLDecoder.decode(parts[0], "UTF-8");
-			String _archivo = URLDecoder.decode(parts[1], "UTF-8");
-			String _directorio = URLDecoder.decode(parts[2], "UTF-8");
-			String[] _palabrasClave = URLDecoder.decode(parts[3], "UTF-8").split("::");
-			String _comentario;
-			try {
-				_comentario = URLDecoder.decode(parts[4], "UTF-8");
-			} catch (Exception ex) {
-				_comentario = "";
-			}
-			detalles = new ArchivoDetalles(_nombre, _archivo, _directorio, _palabrasClave, _comentario);
+			String nombre = URLDecoder.decode(parts[0], "UTF-8");
+			String archivo = URLDecoder.decode(parts[1], "UTF-8");
+			String directorio = URLDecoder.decode(parts[2], "UTF-8");
+			String[] palabrasClave = URLDecoder.decode(parts[3], "UTF-8").split("::");
+			String comentario;
+			comentario = URLDecoder.decode(parts[4], "UTF-8");
+			detalles = new ArchivoDetalles(nombre, archivo, directorio, palabrasClave, comentario);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}

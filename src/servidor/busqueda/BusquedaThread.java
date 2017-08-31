@@ -14,13 +14,14 @@ public class BusquedaThread extends Thread implements IBusquedaThread {
 		start();
 	}
 
-	@Override
-	public void run() {
-//		Consola.Mensaje("Buscando en " + repositorio.nombre());
-		resultados = this.repositorio.buscar(palabra);
-	}
-
 	public Coincidencia[] getResultados() {
 		return resultados;
 	}
+
+	@Override
+	public void run() {
+		// Consola.Mensaje("Buscando en " + repositorio.nombre());
+		resultados = this.repositorio.buscar(palabra);
+	}
+
 }

@@ -18,10 +18,7 @@ import utils.Arrays;
 import utils.Condicion;
 
 /**
- * This class is the implementation object for your IDL interface.
- * 
- * Let the Eclipse complete operations code by choosing 'Add unimplemented
- * methods'.
+ * Implementaci√≥n de la parte servidor del Repositorio.
  */
 public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	String nombre = null;
@@ -52,10 +49,10 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	}
 
 	/**
-	 * Obtiene la lista de repositorios que est·n subordinados de este.
+	 * Obtiene la lista de repositorios que est√°n subordinados de este.
 	 * 
 	 * La lista se obtiene del Name Server.
-	 * */
+	 */
 	public IRepositorio[] subordinados() {
 		Object[] hijos = Middleware.localizarHijos(nombre(), IRepositorio.CLASE);
 		// Hay que quitar uno, que es este mismo repositorio
@@ -73,9 +70,9 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	/**
 	 * Da de baja un repositorio subordinado.
 	 * 
-	 * Solo quita la referencia del subordinado como hijo de este repositorio.
-	 * No quita referencias en ORB o quita el nombre raiz del repositorio.
-	 * */
+	 * Solo quita la referencia del subordinado como hijo de este repositorio. No
+	 * quita referencias en ORB o quita el nombre raiz del repositorio.
+	 */
 	public void baja(String nombre) {
 		String[] nombres = { nombre(), nombre };
 		try {
@@ -104,17 +101,19 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 		// }
 
 		ArrayList<IRepositorio> repos = new ArrayList<IRepositorio>();
-		// Si aÒado el local, provocamos recursividad infinita
-		// repos.add(indice.getRepositorio());
+
+		// Si a√±ado el local aqu√≠, provocamos recursividad infinita
 		for (IRepositorio sub : subordinados()) {
 			repos.add(sub);
 		}
 
+		// Un hilo por cada repositorio, inclu√≠do el local con su propia clase
 		ArrayList<Thread> threads = new ArrayList<Thread>();
 		threads.add(new BusquedaLocalThread(indice, palabraClave));
 		for (IRepositorio repo : repos) {
 			threads.add(new BusquedaThread(repo, palabraClave));
 		}
+
 		for (Thread t : threads) {
 			try {
 				t.join();
@@ -132,41 +131,40 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 	}
 
 	/**
-	 * Este mÈtodo debe comportarse como una factorÌa de ITransferencias.
+	 * Este m√©todo debe comportarse como una factor√≠a de ITransferencias.
 	 * 
 	 * @throws ArchivoNoEncontradoException
-	 * */
+	 */
 	public ITransferencia iniciarDescarga(String nombre) throws ArchivoNoEncontradoException {
 		// Se solicita la descarga de un archivo
-		// Se busca el archivo en el Ìndice y se pasan los detalles a la nueva
-		// transferencia
+		// Se busca el archivo en el √≠ndice y se pasan los detalles al hilo que atiende
+		// la nueva transferencia
 		ArchivoDetalles detalles = indice.buscarDetalles(nombre);
 		TransferenciaThread hilo = new TransferenciaThread(detalles);
 		return hilo.getTransferencia();
 	}
 
 	/**
-	 * Metodo que usar· un repositorio subordinado para registrarse como hijo.
+	 * Metodo que usar√° un repositorio subordinado para registrarse como hijo.
 	 * 
-	 * TODO Se podrÌa tambiÈn mantener la lista de hijos seg˙n los que se
-	 * registren usando este mÈtodo.
+	 * TODO Se podr√≠a tambi√©n mantener la lista de hijos localmente tambi√©n usando
+	 * este m√©todo.
 	 * 
 	 * @throws RegistroNoPosibleException
-	 * */
+	 */
 	public String registrar(IRepositorio referencia) throws RegistroNoPosibleException {
 		return registrarConNombre(referencia, referencia.nombre());
 	}
 
 	/**
-	 * Metodo que usar· un repositorio subordinado para registrarse como hijo.
+	 * Metodo que usar√° un repositorio subordinado para registrarse como hijo.
 	 * 
-	 * TODO Se podrÌa tambiÈn mantener la lista de hijos seg˙n los que se
-	 * registren usando este mÈtodo.
+	 * TODO Se podr√≠a tambi√©n mantener la lista de hijos localmente tambi√©n usando
+	 * este m√©todo.
 	 * 
 	 * @throws RegistroNoPosibleException
-	 * */
-	public String registrarConNombre(IRepositorio referencia, String nombre)
-			throws RegistroNoPosibleException {
+	 */
+	public String registrarConNombre(IRepositorio referencia, String nombre) throws RegistroNoPosibleException {
 		// Comprobar que no hay un repositorio hijo con este mismo nombre.
 		IRepositorio[] r = subordinados();
 		if (Arrays.Any(r, new CondicionNombreRepositorioIgual(nombre))) {
@@ -174,6 +172,7 @@ public class IRepositorioServerImpl extends repositorio.IRepositorioPOA {
 			System.err.println(msg);
 			throw new RegistroNoPosibleException(msg);
 		}
+
 		String[] ruta = { nombre(), nombre };
 		Middleware.nombrarObjeto(referencia, ruta);
 		IRepositorio registrado = (IRepositorio) Middleware.localizar(ruta, IRepositorio.CLASE);

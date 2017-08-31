@@ -26,43 +26,44 @@ public class Main {
 	private static File directorioConfiguracion;
 	private static Coincidencia[] ultimaBusqueda;
 
+	public static File getDirectorioConfiguracion() {
+		return directorioConfiguracion;
+	}
+
 	/**
 	 * @param args
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
 	public static void main(String[] args) throws IOException, InterruptedException {
-		// CORBALogDomains.RPC_TRANSPORT
-		// Logger.global.setLevel(Level.SEVERE);
-
 		// /////////////////////////////////
 		// Inicializar el repositorio
 		// /////////////////////////////////
 
 		directorioConfiguracion = new File(args.length == 1 ? args[0] : "");
 		if (!directorioConfiguracion.exists()) {
-			errorFatal("Config dir doesn't exist! (" + directorioConfiguracion.getAbsolutePath() + ")");
+			errorFatal("El directorio de configuraciÃ³n no existe! (" + directorioConfiguracion.getAbsolutePath() + ")");
 		}
 
 		// p("Config dir: " +
 		// directorioConfiguracion.getAbsolutePath());
 
 		// Leer archivos de configuracion sencillos
-		String cfgPadre = leeCadenaConfiguracion(Constantes.RepositorioPadre, directorioConfiguracion);
-		String cfgRaiz = leeCadenaConfiguracion(Constantes.RepositorioRaiz, directorioConfiguracion);
-		String cfgNombre = leeCadenaConfiguracion(Constantes.RepositorioNombre, directorioConfiguracion);
+		String cfgPadre = leeCadenaConfiguracion(Constantes.REPO_PADRE, directorioConfiguracion);
+		String cfgRaiz = leeCadenaConfiguracion(Constantes.REPO_RAIZ, directorioConfiguracion);
+		String cfgNombre = leeCadenaConfiguracion(Constantes.REPO_NOMBRE, directorioConfiguracion);
 
 		// p("Repo raiz: " + cfgRaiz);
 		p("Repo nombre: " + cfgNombre);
 		// p("Repo padre: " + cfgPadre);
 
-		IndiceBusqueda indice = cargarIndice(Constantes.ArchivoIndice, directorioConfiguracion);
+		IndiceBusqueda indice = cargarIndice(Constantes.ARCHIVO_INDICE, directorioConfiguracion);
 
 		repoThread = new RepositorioThread(cfgNombre, cfgPadre, cfgRaiz, indice);
 		repoThread.start();
-
+		
 		// Esperar a que el hilo inicialice...
-		// Ñapa para esperar hasta que el hilo servidor haya terminado de cargar
+		// Ã‘apa para esperar hasta que el hilo servidor pille el Lock antes que este
 		Thread.sleep(100);
 		Main.loadLock.lock();
 		Main.loadLock.unlock();
@@ -70,26 +71,32 @@ public class Main {
 		try {
 			menuPrincipal();
 		} catch (Exception ex) {
-			errorFatal("Ha ocurrido un error");
+			errorFatal("Ha ocurrido un error: " + ex.getMessage());
 		}
 	}
 
 	private static String leeCadenaConfiguracion(String nombre, File directorio) {
 		String contents = null;
 		File archivo = null;
+		Scanner scanner = null;
 		try {
 			archivo = new File(directorio.getAbsolutePath(), nombre);
 			if (!archivo.exists()) {
 				errorFatal(nombre + " no encontrado!");
 			}
-			contents = new Scanner(archivo, "UTF-8").nextLine();
+			scanner = new Scanner(archivo, "UTF-8");
+			contents = scanner.nextLine();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			errorFatal(archivo.getName() + " no se puede encontrar?!");
+		} finally {
+			scanner.close();
 		}
+
 		return contents;
 	}
 
+	// TODO Probablemente este mÃ©todo deberÃ­a ir en la clase IndiceBusqueda
 	private static IndiceBusqueda cargarIndice(String nombre, File directorio) {
 		IndiceBusqueda indice = new IndiceBusqueda();
 		File archivo = new File(directorio, nombre);
@@ -121,7 +128,7 @@ public class Main {
 	private static void menuPrincipal() {
 		while (true) {
 			p();
-			p("Menú del repositorio");
+			p("MenÃº del repositorio");
 			p();
 			p("1. Buscar documentos en este repositorio (y subordinados)");
 			p("2. Buscar documentos globalmente");
@@ -129,9 +136,11 @@ public class Main {
 			p("4. Listar documentos en el repositorio local");
 			p("5. Insertar documento en el repositorio local");
 			p("6. Eliminar documento en el repositorio local");
-			p("9. Exit");
-			System.out.print("> ");
+			p("9. Salir");
+			f("> ");
 
+			// No se puede cerrar entrada, porque si no se cierra System.in para toda la aplicaciÃ³n
+			@SuppressWarnings("resource")
 			Scanner entrada = new Scanner(System.in);
 			try {
 
@@ -160,7 +169,6 @@ public class Main {
 				case 9:
 					repoThread.detener();
 					Middleware.detener();
-					// repoThread.interrupt();
 					System.exit(0);
 					break;
 				}
@@ -170,8 +178,9 @@ public class Main {
 	}
 
 	private static void menuBusquedaLocal() {
+		@SuppressWarnings("resource")
 		Scanner in = new Scanner(System.in);
-		System.out.print("Palabra? ");
+		f("Palabra? ");
 		String palabra = in.nextLine();
 		Coincidencia[] cx = repoThread.getRepositorio().buscar(palabra);
 		ultimaBusqueda = cx;
@@ -179,8 +188,9 @@ public class Main {
 	}
 
 	private static void menuBusquedaGlobal() {
+		@SuppressWarnings("resource")
 		Scanner in = new Scanner(System.in);
-		System.out.print("Palabra? ");
+		f("Palabra? ");
 		String palabra = in.nextLine();
 		try {
 			Coincidencia[] cx = repoThread.getRepositorioRaiz().buscar(palabra);
@@ -193,19 +203,20 @@ public class Main {
 
 	private static void menuDescargarDocumento() {
 		if (ultimaBusqueda == null || ultimaBusqueda.length == 0) {
-			p("No se ha hecho una búsqueda o la última búsqueda no tuvo resultados.");
+			p("No se ha hecho una bÃºsqueda aÃºn o la Ãºltima bÃºsqueda no tuvo resultados.");
 			return;
 		}
-		// Que el usuario elija un resultado de búsqueda...
-		p("Ultima búsqueda realizada:");
+		// Que el usuario elija un resultado de bÃºsqueda...
+		p("Ultima bÃºsqueda realizada:");
 		menuImprimirCoincidencias(ultimaBusqueda);
 
+		@SuppressWarnings("resource")
 		Scanner in = new Scanner(System.in);
 		p();
 		f("# de resultado? ");
 		int indice = in.nextInt() - 1;
 		if (indice > ultimaBusqueda.length) {
-			p("No es un resultado válido...");
+			p("No es un resultado vÃ¡lido...");
 		}
 		Coincidencia resultado = ultimaBusqueda[indice];
 		f("Iniciando descarga de '%s' desde '%s'%n", resultado.nombre, resultado.repositorio.nombre());
@@ -219,7 +230,7 @@ public class Main {
 		try {
 			// Iniciar la descarga
 			ITransferencia transferencia = resultado.repositorio.iniciarDescarga(resultado.nombre);
-			// Crear el archivo local e ir rellenándolo
+			// Crear el archivo local e ir rellenÃºndolo
 			File dir = new File("");
 			salida = new File(dir.getAbsolutePath(), resultado.archivo);
 			p("Descargando en: " + salida.getAbsolutePath());
@@ -270,13 +281,19 @@ public class Main {
 				"Comentario" };
 		// Obtener detalles del nuevo archivo
 		String[] respuestas = new String[preguntas.length];
+		@SuppressWarnings("resource")
 		Scanner in = new Scanner(System.in);
 		int index = 0;
 		for (String mensaje : preguntas) {
-			f("%-20s? ", mensaje);
-			respuestas[index++] = in.nextLine();
+			String respuesta = "";
+			// Nos aseguramos que el usuario escribe algo
+			while (respuesta.trim().length() == 0) {
+				f("%-20s? ", mensaje);
+				respuesta = in.nextLine();
+			}
+			respuestas[index++] = respuesta;
 		}
-		// Revisar que todo esté bien y pedir confirmación
+		// Revisar que todo estÃ© bien y pedir confirmaciÃ³n
 		// p("Nuevo documento:");
 		// index = 0;
 		// for (String mensaje : preguntas) {
@@ -305,14 +322,15 @@ public class Main {
 		Coincidencia[] todas = repoThread.getIndiceBusqueda().buscar();
 		menuImprimirCoincidencias(todas);
 
+		@SuppressWarnings("resource")
 		Scanner in = new Scanner(System.in);
 		p();
 		f("# a borrar? ");
 		int indice = in.nextInt() - 1;
 		if (indice > todas.length) {
-			p("No es un resultado válido...");
+			p("No es un resultado vÃºlido...");
 		}
-		// Para consumir el salto de linea después del número?
+		// Para consumir el salto de linea despuÃºs del nÃºmero?
 		in.nextLine();
 		f("Seguro? (s/n)");
 		boolean seguro = in.nextLine().equals("s");
@@ -330,7 +348,8 @@ public class Main {
 
 	private static void menuEsperarEntradaUsuario() {
 		p();
-		p("Pulsa Enter para volver al menú...");
+		p("Pulsa Enter para volver al menÃº...");
+		@SuppressWarnings("resource")
 		Scanner in = new Scanner(System.in);
 		in.nextLine();
 	}
@@ -343,14 +362,10 @@ public class Main {
 			f(format, "-", "-----------", "------", "-------", "--------------", "----------");
 			for (int i = 0; i < coincidencias.length; i++) {
 				Coincidencia c = coincidencias[i];
-				f(format, i + 1, c.repositorio.nombre(), c.nombre, c.archivo, Strings.join(",",
-						c.palabrasClave), c.comentario);
+				f(format, i + 1, c.repositorio.nombre(), c.nombre, c.archivo, Strings.join(",", c.palabrasClave),
+						c.comentario);
 			}
 		}
-	}
-
-	public static File getDirectorioConfiguracion() {
-		return directorioConfiguracion;
 	}
 
 	public static void errorFatal(String msg) {
